@@ -29,13 +29,8 @@ unsigned int tree_identifier::HashValue() {
 
 tree tree_common::LinkListGetNext(void)
 {
-	::tree next = TREE_CHAIN(m_node);
+	tree next = TREE_CHAIN(m_node);
 	return next;
-}
-
-
-bool tree_base::Try_TREE_CHECK()
-{
 }
 
 }// end namespace plugin_cxx
