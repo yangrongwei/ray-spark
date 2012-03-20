@@ -30,11 +30,11 @@ extern void dbg_vprintf(int level, ...);
 /* use #ifdef ??? to finely control ??, maybe ... required */
 #define CLOG_FATAL(...)    dbg_vprintf(FATAL_LOG_LEVEL, __VA_ARGS__)
 #define CLOG_ERROR(...)    dbg_vprintf(ERROR_LOG_LEVEL, __VA_ARGS__)
-#define CLOG_WARN(...)    dbg_vprintf(ERROR_LOG_LEVEL, __VA_ARGS__)
-#define CLOG_INFO(...)    dbg_vprintf(ERROR_LOG_LEVEL, __VA_ARGS__)
-#define CLOG_DEBUG(...)    dbg_vprintf(WARN_LOG_LEVEL, __VA_ARGS__)
-#define CLOG_TRACE_IN()		dbg_vprintf(TRACE_LOG_LEVEL, "Entering %s.\n", __func__, __FILE__, __LINE__)
-#define CLOG_TRACE_OUT()	dbg_vprintf(TRACE_LOG_LEVEL, "Leaving  %s.\n", __func__, __FILE__, __LINE__)
+#define CLOG_WARN(...)     dbg_vprintf(WARN_LOG_LEVEL, __VA_ARGS__)
+#define CLOG_INFO(...)     dbg_vprintf(INFO_LOG_LEVEL, __VA_ARGS__)
+#define CLOG_DEBUG(...)    dbg_vprintf(DEBUG_LOG_LEVEL, __VA_ARGS__)
+#define CLOG_TRACE_IN()    dbg_vprintf(TRACE_LOG_LEVEL, "Entering %s.\n", __func__, __FILE__, __LINE__)
+#define CLOG_TRACE_OUT()   dbg_vprintf(TRACE_LOG_LEVEL, "Leaving  %s.\n", __func__, __FILE__, __LINE__)
 
 
 #endif /* CLOG_H_ */
