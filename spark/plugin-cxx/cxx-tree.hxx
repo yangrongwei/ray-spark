@@ -148,6 +148,15 @@ namespace plugin_cxx
 //Ray: It is a base class, which provids lots service, it's large, as expected.
 // 'tree_code' is used to distinguish various types.
 // The heart of gcc's object-in-c way, its own type system.
+// TODO: a brief comments for struct tree_base
+// 1. tree_code for custom type system  -- tree.h:368
+// 2. various flags                     -- tree.h:370-400
+// 3. two other fields, one for flag padding, one for saving space
+//    --total bit count of flags ??? caculate it by our demo code
+// Hierachy tree
+// tree_base                 -- tree.h:367
+// \_tree_common             -- tree.h:???
+//   +-tree_
 
 // -- plugin/include/tree.h:367
 //struct GTY(()) tree_base {
@@ -219,6 +228,8 @@ public: // Direct macro to member function map
 //	const_tree StripTypeNops(const_tree);   // -- tree.h:1003
 //	const_tree StripUselessTypeConversion(const_tree);  // -- tree.h:1014
 
+public: // prediate mapping -- macro --> member function
+
 	// Generic type classifying service
 	bool IntegralTypeP();         // -- tree.h:1021 P_368
 	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
@@ -234,12 +245,18 @@ public: // Direct macro to member function map
 //	bool VoidTypeP();
 
 
-public: // Direct macro to member function map // member access
-
+public: // flag-mapping  -- Direct macro to member function map // member access
+  //Ray:
+  // flag purpose can be found in
+  // 1. [plug-in]/tree.h:416-614   A big flag check list for various nodes
+  // 2. macro's comment -- tree.h:1107-???        seperated in various location in tree.h
+  // 3. the flag name defined in struct tree_base
+  // ...
+  // Ray: We have opportunity to direct describe various purpose
+  //      in subclassed in our Intuitive name section. Each subclass
+  //      member function call this one eventually...
+  
 	// multi-purpose flag, see code comments.
-	// Ray: We have opportunity to direct describe various purpose
-	//      in subclassed in our Intuitive name section. Each subclass
-	//      member function call this one eventually...
 	bool TreeAddressable();       // -- tree.h:1119 M_372
 	bool CallExprTailcall();      // -- tree.h:1124 M_372
 	// shit, so many purpose...
