@@ -154,10 +154,43 @@ namespace plugin_cxx
 // 3. two other fields, one for flag padding, one for saving space
 //    --total bit count of flags ??? caculate it by our demo code
 // Hierachy tree
-// tree_base                 -- tree.h:367
-// \_tree_common             -- tree.h:???
-//   +-tree_
-
+//
+// tree_base                        -- tree.h:367 "xxx" Ray:copy from treestructs.def???
+// +-tree_common                    -- tree.h:410
+//   +-tree_int_cst                 -- tree.h:1409
+//   +-tree_real_cst                -- tree.h:1422
+//   +-tree_fixed_cst               -- tree.h:1434
+//   +-tree_string                  -- tree.h:1444
+//   +-tree_complex                 -- tree.h:1454
+//   +-tree_vector                  -- tree.h:1463
+//   +-tree_identifier              -- tree.h:1486
+//   +-tree_list                    -- tree.h:1495
+//   +-tree_vec                     -- tree.h:1508
+//   +-tree_constructor             -- tree.h:1567
+//   +-tree_exp                     -- tree.h:1857
+//   +-tree_ssa_name                -- tree.h:1923
+//   +-tree_omp_clause              -- tree.h:1963
+//   +-tree_block                   -- tree.h:2034
+//   +-tree_type                    -- tree.h:2332
+//   +-tree_binfo                   -- tree.h:2482
+//   +-tree_decl_minimal            -- tree.h:2579
+//   | +-tree_decl_common           -- tree.h:2747
+//   | | +-tree_decl_with_rtl       -- tree.h:2863
+//   | |   +-tree_label_decl        -- tree.h:2954
+//   | |   +-tree_result_decl       -- tree.h:2964
+//   | |   +-tree_const_decl        -- tree.h:2969
+//   | |   +-tree_parm_decl         -- tree.h:2982
+//   | |   +-tree_decl_with_vis     -- tree.h:3121
+//   | |     +-tree_var_decl        -- tree.h:3205
+//   | |     +-tree_decl_non_common -- tree.h:3227
+//   | |       +-tree_function_decl -- tree.h:3369
+//   | |       +-tree_type_decl     -- tree.h:3443
+//   | +-tree_field_decl            -- tree.h:2931
+//   | +-tree_translation_unit_decl -- tree.h:3417
+//   +-tree_statement_list          -- tree.h:3466
+//   +-tree_optimization_option     -- tree.h:3476
+//   +-tree_target_option           -- tree.h:3491
+//
 // -- plugin/include/tree.h:367
 //struct GTY(()) tree_base {
 //  ENUM_BITFIELD(tree_code) code : 16;
