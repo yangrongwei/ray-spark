@@ -22,6 +22,9 @@
 // 2. Declaring new struct for new GENERIC 'tree node'
 //    The style is always put the parent class, which is C struct,
 //    at the first field of declaring struct.
+// _. Each object-in-C class is sepreated by a FF(form feed) character
+//    I saw it in Notepad++, which editor is code maintainer using?
+//    Maybe, they have a better view for the character.
 //
 // The purpose of this file (cxx-tree.hxx) is to wrap these macros into
 // C++ member functions. As a result, it will give programmer visual
@@ -34,7 +37,7 @@
 //
 // TODO: copy/translate notes from my SkyDrive into here
 //  Two key hints:
-//  1. xxx_CHECK
+//  1. xxx_CHECK   xxx_CST_CHECK
 //  2. (NODE)->xxx.foo
 // For example
 //
@@ -64,12 +67,52 @@
 //  Macro to member function map
 //  1. The macro is defined     in [plug-inc]/tree.h line 2113
 //  2. The return type is found in [plug-inc]/tree.h line 2374, which is describing a type specific member
+//  -. All setter return the setting value, not 'void'.
+//     Why? It will keep same effect as macro does. And maybe who needs it.
+//     Cost? Negligible comparing with benefits.
+//
+// Macro purpose marker list:
+//  M_      type specific Member variable getter macro
+//  Ms_     type specific Member variable Setter macro
+//  P_      like property (value is caculated on-the-foly) accessor
+//
+//  Pc_   == C_ ??
+//  C_      aggregation (container) helper ?? accessor ??
+//          // Why not Container ?  Easy to confusing with class,
+//          // Somewhat borrowed from UML
+//
 //  Forward reference, M_ marks it's a type specific member getter
+// to mark memeber access ?? (with attribute to verify our code ?? where to put ? I like leading...)
+#define M_          // type specific member getter
+#define Ms_         // type specific member setter
+
+// Abbriviation list (sadly, used in intuitive name)
+//   I want to use full name whenever possible in my coined intuitive name.
+//   But, sometimes, the name is too long to read at a glance, which make it be not intuitive.
+//   So we have this list. Key consitent express or use them sometime???
+// identifier   ident
+// pointer      ptr
 
 // strange gcc-macro conversion founds:
 // 1. For c-string, the macro uses the name xxx_POINTER (strange, why? like shit)
 
+// Identfiy it is the top/root class in a class hierarchy
+// Is handy attribute exist ?
+#define ROOT_CLASS
+
+#define LEAF_CLASS
+#define MIDDLE_CLASS
+
+
+// to mark bit-field ??  n1548-c-standard-sec-6.7.2.1-para-9
+// 1 bit wide flag bit-field is mapped directly to C++ bool type, type safe purpse...
+#define Bf(width)         //bit-field, use less bits in corresponding integer type
+
+
+
 #include <stddef.h>
+
+
 
 // Copied from [plug-inc]/coretypes.h to avoid include the file.
 // Consequently, any file includes this file will not depend on GCC directly.
@@ -81,62 +124,128 @@ typedef const union tree_node *const_tree;  // -- coretypes.h:63
 
 namespace plugin_cxx
 {
+// -- tree.h:347
+/* A tree node can represent a data type, a variable, an expression
+   or a statement.  Each node has a TREE_CODE which says what kind of
+   thing it represents.  Some common codes are:
+   INTEGER_TYPE -- represents a type of integers.
+   ARRAY_TYPE -- represents a type of pointer.
+   VAR_DECL -- represents a declared variable.
+   INTEGER_CST -- represents a constant integer value.
+   PLUS_EXPR -- represents a sum (an expression).
 
-// Identfiy it is the top/root class in a class hierarchy
-// Is handy attribute exist ?
-#define ROOT_CLASS
+   As for the contents of a tree node: there are some fields
+   that all nodes share.  Each TREE_CODE has various special-purpose
+   fields as well.  The fields of a node are never accessed directly,
+   always through accessor macros.  */
 
-#define LEAF_CLASS
-#define MIDDLE_CLASS
-
-// to mark memeber access ?? (with attribute to verify our code ?? where to put ? I like leading...)
-#define M_          // type specific member getter
-#define Ms_         // type specific member setter
-
-// to mark bit-field ??  n1548-c-standard-sec-6.7.2.1-para-9
-// 1 bit wide flag bit-field is mapped directly to C++ bool type, type safe purpse...
-#define Bf(width)         //bit-field, use less bits in corresponding integer type
-
-// -- plugin/include/tree.h:361
 /* Every kind of tree node starts with this structure,
    so all nodes have these fields.
 
    See the accessor macros, defined below, for documentation of the
    fields.  */
+//
+//Ray: It is a base class, which provids lots service, it's large, as expected.
+// 'tree_code' is used to distinguish various types.
+// The heart of gcc's object-in-c way, its own type system.
+
 // -- plugin/include/tree.h:367
+//struct GTY(()) tree_base {
+//  ENUM_BITFIELD(tree_code) code : 16;
+//
+//  unsigned side_effects_flag : 1;
+//  unsigned constant_flag : 1;
+//  unsigned addressable_flag : 1;
+//  //...
 class ROOT_CLASS tree_base {
+protected:
+	tree m_node;
+	tree_base(const tree& node) = delete;
+	tree_base& operator = (const tree& node) = delete;
 public:
 	explicit tree_base(tree node):m_node(node){};
+	static bool _TryAattach(tree node);
 
+public: // Direct macro to member function map
 	//Ray:
-	// TREE_CHECK() macro  --defined in-- plugin/include/tree.h:663
-	// tree_check_failed() function --defined in-- [gcc-src]/gcc/tree.c:8624
-	// internal_error() function --defined in-- [gcc-src]/gcc/diagnostic.c:832
-	bool Try_TREE_CHECK();
-	bool TryAattach(tree node);
-public:
-	/* The tree-code says what kind of node it is.
-	   Codes are defined in tree.def.  */
-//	enum tree_code GetTreeCode(); 		// -- tree.h:656
-//	enum tree_code SetTreeCode(enum tree_code);	// -- tree.h:656
+	// Bit-field in enum
+	// First, I do not understand why bit-field in enum.
+	// Then, I realized, enum constants only use limited bits in its storage,
+	// there are spare bits can be utilized for its variable... So that's it.
+	//
+	// ENUM_BITFIELD -- [plug-inc]/system.h:604-608
+	//
+	// I do not find the extension is documented in gcc-man-4.6.3
+	// Only gcc-man-4.6.3-sec-4.9 lists some implementation-defined behavior, no help.
+	// This forum topic gives me help.
+	// 'enums as bitfields'
+	// http://www.velocityreviews.com/forums/t754551-enum-as-bitfields.html
+	//
+	// Regardless it is bit-field in enum or in int, the bit-filed value is int
+	// Signed or unsigned ??? I can only guess...unsigned?
+	//
+	// Type safe is not very useful here, we should use them rarely. Just int, simple.
+	unsigned int Bf(16) TreeCode();                 // -- tree.h:656, M_368  //To more generic type, right?
+	unsigned int Bf(16) TreeSetCode(unsigned int);  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
 
-	// -- plugin/include/tree.h:974
-	size_t TreeHash();
+	// -- tree.h:661-941
+	// Various TREE_CHECK macro is not mapped here.
+	// They are implementation detail, for coding support.
+//	//Ray:
+//	// TREE_CHECK() macro  --defined in-- plugin/include/tree.h:663
+//	// tree_check_failed() function --defined in-- [gcc-src]/gcc/tree.c:8624
+//	// internal_error() function --defined in-- [gcc-src]/gcc/diagnostic.c:832
+//	bool Try_TREE_CHECK();
 
-	// -- plugin/include/tree.h:993
-	const_tree StripNops(const_tree);
-	const_tree StripSignNops(const_tree);
-	const_tree StripTypeNops(const_tree);
-	const_tree StripUselessTypeConversion(const_tree);
-public:
-	// -- plugin/include/tree.h:1021
-	bool IntegralTypeP();
-	bool NonSatFixedPointTypeP();
-	//...
-	// -- plugin/include/tree.h:1091
-	bool CompleteTypeP();
-	// -- plugin/include/tree.h:1094
-	bool VoidTypeP();
+	// -- tree.h:947
+	// tree code class check ??
+	// It seems implementation detai, for coding support.
+
+	// Ray:
+	// It seems we do not need mapping xxx_CHECK macros here
+	// They will be used in corresponding class constructor, looks like.
+
+
+    // -- tree.h:970  Ray: Not belong this class ???
+
+	size_t TreeHash();    // -- tree.h:974, P_ based-on this pointer ???
+
+	// skip from 977, later check it
+
+	//Ray: not in this class, and wrong
+//	// -- plugin/include/tree.h:993
+//	const_tree StripNops(const_tree);       // -- tree.h:993
+//	const_tree StripSignNops(const_tree);   // -- tree.h:998
+//	const_tree StripTypeNops(const_tree);   // -- tree.h:1003
+//	const_tree StripUselessTypeConversion(const_tree);  // -- tree.h:1014
+
+	// Generic type classifying service
+	bool IntegralTypeP();         // -- tree.h:1021 P_368
+	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
+	bool SatFixedPointTypeP();    // -- tree.h:1033 P_(368, 386)
+	bool FixedPointTypeP();       // -- tree.h:1038 P_368
+	bool ScalarFloatTypeP();      // -- tree.h:1042 P_368
+    //...till 1102
+//	// -- plugin/include/tree.h:1021
+//	//...
+//	// -- plugin/include/tree.h:1091
+//	bool CompleteTypeP();
+//	// -- plugin/include/tree.h:1094
+//	bool VoidTypeP();
+
+
+public: // Direct macro to member function map // member access
+
+	// multi-purpose flag, see code comments.
+	// Ray: We have opportunity to direct describe various purpose
+	//      in subclassed in our Intuitive name section. Each subclass
+	//      member function call this one eventually...
+	bool TreeAddressable();       // -- tree.h:1119 M_372
+	bool CallExprTailcall();      // -- tree.h:1124 M_372
+	// shit, so many purpose...
+
+
+	bool TypeSaturating();        // -- tree.h:1376 M_386
 
 // -- plugin/include/tree.h:1105
 public:
@@ -150,8 +259,9 @@ public:
 
 	//...
 	bool TreeLangFlag0(); // -- tree.h:1379
-protected:
-	tree m_node;
+public: // Direct macro to member function map
+
+
 };
 
 
@@ -172,27 +282,61 @@ public:
 };
 
 
-// -- plugin/include/tree.h:1409
+
+// -- [plug-inc]/double-int.h:54
+//typedef struct
+//{
+//  unsigned HOST_WIDE_INT low;
+//  HOST_WIDE_INT high;
+//} double_int;
+//
+// -- tree.h:1409
 // struct GTY(()) tree_int_cst {
 //   struct tree_common common;
 //   double_int int_cst;
 // };
 class tree_int_cst : public tree_common
 {
-
+public: // Direct macro to member function map
+	double_int TreeIntCst();                // -- tree.h:1393, M_1411
+	unsigned HOST_WIDE_INT TreeIntCstLow(); // -- tree.h:1394, P_1411
+	HOST_WIDE_INT TreeIntCstHigh();         // -- tree.h:1395, P_1411
+	// tree.h:1397, 1402  ?? not belong this class, but close related.
+	// bool IntCstLt (const ) ???
+public: // Intuitive name for macro purpose
+	// bool operator < (const tree_int_cst&);    // =~= tree.h: WRONG.... both signed and unsigned...conflict
 };
 
-// -- plugin/include/tree.h:1422
-// struct GTY(()) tree_real_cst {
-//   struct tree_common common;
-//   struct real_value * real_cst_ptr;
-// };
+// -- tree.h:1422
+//struct GTY(()) tree_real_cst {
+//  struct tree_common common;
+//  struct real_value * real_cst_ptr;
+//};
 class tree_real_cst : public tree_common
 {
+public: // Direct macro to member function map
+	struct real_value * TreeRealCstPtr();  // -- tree.h:1419, M_1424
+	struct real_value TreeRealCst();       // -- tree.h:1420, P_1424
+public: // Intuitive name for macro purpose
 
 };
 
-// -- plugin/include/tree.h:1444
+// -- tree.h:1434
+//struct GTY(()) tree_fixed_cst {
+//  struct tree_common common;
+//  struct fixed_value * fixed_cst_ptr;
+//};
+class tree_fixed_cst : public tree_common
+{
+public: // Direct macro to member function map
+	struct fixed_value * TreeFixedCstPtr();  // -- tree.h:1430, M_1436
+	struct fixed_value TreeFixedCst();       // -- tree.h:1432, P_1436 //Ray: Type safe. Cost? Compiler is smart
+public: // Intuitive name for macro purpose
+
+};
+
+
+// -- tree.h:1444
 // struct GTY(()) tree_string {
 //   struct tree_common common;
 //   int length;
@@ -200,9 +344,51 @@ class tree_real_cst : public tree_common
 // };
 class tree_string : public tree_common
 {
-public:
-	int TreeStringLength();  // -- tree.h:1440
-	const char * TreeStringPointer();  // -- tree.h:1441
+public: // Direct macro to member function map
+	int TreeStringLength();            // -- tree.h:1440, M_1446
+	const char * TreeStringPointer();  // -- tree.h:1441, M_1447
+public: // Intuitive name for macro purpose
+	//Ray:
+	// Do NOT provide std::string conversion here, useless, boring, maybe stupid...
+	// We do not want to depend std library here, unnecessary.
+	// Anyone wants it can convert by themself.
+};
+
+
+// -- tree.h:1454
+//struct GTY(()) tree_complex {
+//  struct tree_common common;
+//  tree real;
+//  tree imag;
+//};
+class tree_complex : public tree_common
+{
+public: // Direct macro to member function map
+	tree TreeRealpart(void);  // -- tree.h:1451, M_1456
+	tree TreeImagpart(void);  // -- tree.h:1452, M_1457
+public: // Intuitive name for macro purpose
+
+};
+
+
+//Ray:
+// tree_vector != tree_vec [plug-inc]/tree.h:1508
+//
+// tree_vector is a tree representing a language vector, which is also a tree.
+// tree_vec    is a tree representing a vector for tree, which is a real vector (C array)
+//
+// -- tree.h:1463
+//struct GTY(()) tree_vector {
+//  struct tree_common common;
+//  tree elements;
+//};
+class tree_vector : public tree_common
+{
+public: // Direct macro to member function map
+	tree TreeVectorCstElts(void);    // -- tree.h:1461, M_1465  ???
+
+public: // Intuitive name for macro purpose
+
 };
 
 
@@ -217,42 +403,57 @@ routine like strcmp. Use get_identifier to obtain the unique IDENTIFIER_NODE for
 supplied string.
 */
 
-
-// struct GTY(()) ht_identifier		plugin/include/symtab.h:32
+// -- [plug-inc]/symtab.h:32
+//struct GTY(()) ht_identifier {
+//  const unsigned char *str;
+//  unsigned int len;
+//  unsigned int hash_value;
+//};
 //
-// -- plugin/include/tree.h:1486
+// -- tree.h:1486
 // struct GTY(()) tree_identifier {
 //   struct tree_common common;
-//   struct ht_identifier id;
+//   struct ht_identifier id;        // -- [plug-inc]/symtab.h:32  == [gcc-src]/libcpp/include/symtab.h
 // };
 class tree_identifier : public tree_common
 {
 public:
 	explicit tree_identifier(/*const_*/ tree node) : tree_common(node) {};
+public: // Direct macro to member function map
+	unsigned int IdentifierLength(void);           // -- tree.h:1472, P_1488
+	const unsigned char * DentifierPointer(void);  // -- tree.h:1474, P_1488
+	unsigned int HashValue(void);                  // -- tree.h:1476, P_1488
+public: // macros used to convert between data types
+	// -- tree.h:1479
+	/* Translate a hash table identifier pointer to a tree_identifier
+	   pointer, and vice versa.  */
+	static tree HtIdentToGccIdent(struct ht_identifier *);   // -- tree.h:1482 type convertor
+	static struct ht_identifier * GccIdentToHtIdent(tree);   // -- tree.h:1484 type convertor
 public:
-	const char * DentifierPointer();  // -- tree.h:1474
-	unsigned int IdentifierLength();  // -- tree.h:1472
-	unsigned int HashValue();         // -- tree.h:1476
-public:
-	bool IdentifierTransparentAlias(); // -- tree.h:1372
+	bool IdentifierTransparentAlias(); // -- tree.h:1372 ??
+public: // Intuitive name for macro purpose
+	static tree_identifier _FromHashtableIdentPtr(struct ht_identifier *); // =~= HtIdentToGccIdent
+	struct ht_identifier * _ToHashtableIdentPtr(void); // =~= GccIdentToHtIdent
 };
 
 
-// -- plugin/include/tree.h:1495
+// -- tree.h:1495
 //struct GTY(()) tree_list {
 //  struct tree_common common;
 //  tree purpose;
 //  tree value;
 //};
-class tree_list : public tree_common
+class tree_list : public tree_common //Ray: tree_list is not a container ???
 {
-public:
-	tree TreePurpose();  // -- tree.h:1492
-	tree TreeValue();    // -- tree.h:1493
+public: // Direct macro to member function map
+	tree TreePurpose(void);  // -- tree.h:1492, M_1497
+	tree TreeValue(void);    // -- tree.h:1493, M_1498
+public: // Intuitive name for macro purpose
+
 };
 
 
-// -- plugin/include/tree.h:1508
+// -- tree.h:1508
 // struct GTY(()) tree_vec {
 //   struct tree_common common;
 //   int length;
@@ -260,9 +461,47 @@ public:
 // };
 class tree_vec : public tree_common
 {
-public:
-	int TreeVecLength();  //  -- tree.h:1502
-	tree TreeVecElt(int i); // -- tree.h:1502
+public: // Direct macro to member function map
+	int TreeVecLength(void);    // -- tree.h:1502, M_1510
+	//??TreeVecEnd(void); // -- tree.h:1503, P_ 1511
+	tree TreeVecElt(int index); // -- tree.h:1502, C_ ??
+public: // Intuitive name for macro purpose
+};
+
+
+// -- tree.h:1567
+//struct GTY(()) tree_constructor {
+//  struct tree_common common;
+//  VEC(constructor_elt,gc) *elts;
+//};
+class tree_constructor : public tree_common
+{
+public: // Direct macro to member function map
+
+public: // Intuitive name for macro purpose
+
+};
+//Ray: We really need a container wrapper for VEC, etc.
+//     keep it with standard (limited) 'std::' container semantics.
+
+
+// -- tree.h:1857
+//struct GTY(()) tree_exp {
+//  struct tree_common common;
+//  location_t locus;
+//  tree block;
+//  tree GTY ((special ("tree_exp"),
+//	     desc ("TREE_CODE ((tree) &%0)")))
+//    operands[1];
+//};
+class tree_exp : public tree_common
+{
+public: // Direct macro to member function map
+	location_t SetExprLocation(location_t value);  // tree.h:1602, Ms_1859
+	//??ExprFilename(void); // tree.h:1605 P_
+	//??ExprLineno(void);   // tree.h:1606 P_
+public: // Intuitive name for macro purpose
+
 };
 
 // -- tree.h:1923
@@ -274,10 +513,18 @@ public:
 class tree_ssa_name : public tree_common
 {
 public: // Direct macro to member function map
+	tree SsaNameVar(void);       // -- tree.h:1870, M_1927
+	gimple SsaNameDefStmt(void); // -- tree.h:1873, M_1930
+	unsigned int SsaNameVersion(void); // -- tree.h:1877, M_1933
 
+	// typedef struct GTY(()) ssa_use_operand_d {  // -- tree.h:1908
+	struct ssa_use_operand_d SsaNameImmUseNode(void); // -- tree.h:1921, M_1939
 public: // Intuitive name for macro purpose
 
 };
+
+//Ray: Since we have M_ in comment, why put it to function declare?
+//    Remark, we modify this file from bottom to up
 
 // -- tree.h:1942
 //struct GTY(()) phi_arg_d {
