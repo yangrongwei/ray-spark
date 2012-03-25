@@ -492,7 +492,7 @@ public: // Intuitive name for macro purpose
 /*
  * gccint-sec-11.2.1 Identifiers
 An IDENTIFIER_NODE represents a slightly more general concept that the standard C or
-C++ concept of identifier. In particular, anIDENTIFIER_NODEmay contain a ‘$’, or other
+C++ concept of identifier. In particular, anIDENTIFIER_NODEmay contain a ?$?, or other
 extraordinary characters.
 There are never two distinct IDENTIFIER_NODEs representing the same identifier. There-
 fore, you may use pointer equality to compare IDENTIFIER_NODEs, rather than using a

@@ -46,15 +46,15 @@ unsigned int tree_base::TreeCode() const
 
 const unsigned char * tree_identifier::IdentifierPointer(void) {
 	//Ray:
-	// Bug in gcc, inconsistent data type  
+	// Inconsistent data type in gcc
 	// [plug-inc]/symtab.h:32     ht_identifier.str    : const unsigned char *
 	// [plug-inc]/tree.h:1475     IDENTIFIER_POINTER() : const char * 
-	// We adopt the actual data type, not the macro's, so we cast it.
+	// We adopt the actual data type, not the macro's, so we cast it again.
 	// I do not understand why tree.h:1475 cast it?
 	// NOTICE, 'char' is implementation depended. 
 	// c-standard-sec-???
 	const unsigned char * str =
-	__extension__ ({  //Ray: I like this extension, I was finding it for a long time.
+	__extension__ ({  //Ray: I like this extension, I was seeking similar language construct for a long time.
 	const char* s = IDENTIFIER_POINTER(m_node);
 	//static_cast<const unsigned char *>(str); //why cannot used this one? n3242-C++11-last-draft-sec-5.2.9
 	reinterpret_cast<const unsigned char *>(s);
