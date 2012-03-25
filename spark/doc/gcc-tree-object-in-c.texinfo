@@ -1,0 +1,119 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename  object-in-c.info
+@settitle Expaining GCC object-in-c way in GENERIC
+@c %**end of header
+
+@copying
+Copyfight @copyright{} 2012 Raymond Yang
+@end copying
+
+@node GCC Object-in-C way
+@chapter GCC Object-in-C way
+
+type system
+===
+
+supporting data struct/constants/enums
+====
+@node TODO What is GTY(()) ? What is gengtype.c?
+Check the document(internal, user manual, etc.)
+
+
+@node To descible/check the relationship among various tree nodes
+
+Defined in
+--tree.h:753
+#define CONTAINS_STRUCT_CHECK(T, STRUCT) __extension__      \
+({  __typeof (T) const __t = (T);         \
+  if (tree_contains_struct[TREE_CODE(__t)][(STRUCT)] != 1)    \
+      tree_contains_struct_check_failed (__t, (STRUCT), __FILE__, __LINE__, \
+             __FUNCTION__);       \
+    __t; })
+
+Usange example
+--tree.h:948
+#define DECL_MINIMAL_CHECK(T)   CONTAINS_STRUCT_CHECK (T, TS_DECL_MINIMAL)
+
+Declared in
+--tree.h:50
+extern unsigned char tree_contains_struct[MAX_TREE_CODES][64];
+
+Defined in
+--[gcc-src]/gcc/tree.c:224
+unsigned char tree_contains_struct[MAX_TREE_CODES][64];
+
+Initialized in
+--[gcc-src]/gcc/tree.c:350    //Ray: the function name line
+/* Initialize tree_contains_struct to describe the hierarchy of tree
+   nodes.  */
+static void
+initialize_tree_contains_struct (void)
+
+--tree.h:646     //Ray: the enum declaration line
+#undef DEFTREESTRUCT
+#define DEFTREESTRUCT(ENUM, NAME) ENUM,
+enum tree_node_structure_enum {
+#include "treestruct.def"
+  LAST_TS_ENUM
+};
+#undef DEFTREESTRUCT
+
+
+Remark
+The two-dimension array
+unsigned char tree_contains_struct[MAX_TREE_CODES][64];
+is a flag matrix, 
+The cell value is either 1 (one) or 0 (zero).
+The row (less changing dimesion) index is leaf class 
+The column (fastest changing dimesion) index is inhired class
+
+When the cell value is 1 (one), the row indexed class is inherited from
+the column indexed class.
+
+//Ray-Begin: Am I previous understanding right???
+--tree.h:755
+  if (tree_contains_struct[TREE_CODE(__t)][(STRUCT)] != 1)    \
+
+--tree.h:656
+/* The tree-code says what kind of node it is.
+   Codes are defined in tree.def.  */
+#define TREE_CODE(NODE) ((enum tree_code) (NODE)->base.code)
+
+tree.def  vs. treestruct.def   same order, same value ????
+vs. tree.h:3510  union tree_node{}
+
+//Ray-End
+
+--[gcc-src]/gcc/tree.c:8812    //Ray: the enum declaration line
+#undef DEFTREESTRUCT
+#define DEFTREESTRUCT(VAL, NAME) NAME,
+
+static const char *ts_enum_names[] = {
+#include "treestruct.def"
+};
+#undef DEFTREESTRUCT
+
+
+The initial value of each cell is zero, because the data is declared in 
+static storage area. [gcc-src]/gcc/tree.c:224  (right???)
+
+Notice:
+1. The matrix used a hard-coded column number 64 (sixty-four), why?? compring witch row number...
+2. The matrix is extended initialized other place
+   For example [gcc-src]/gcc/cp/cp-lang.c:105
+
+??? Where is doc in code comments??
+According changelog, tree_contains_struct{} is presented since year 2005.
+
+
+
+
+
+
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+@bye

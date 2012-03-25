@@ -1,0 +1,18 @@
+//TDDO: format it some docformat
+
+    // Bit-field in enum
+    // First, I do not understand why bit-field in enum.
+    // Then, I realized, enum constants only use limited bits in its storage,
+    // there are spare bits can be utilized for its variable... So that's it.
+    //
+    // ENUM_BITFIELD -- [plug-inc]/system.h:604-608
+    //
+    // I do not find the extension is documented in gcc-man-4.6.3
+    // Only gcc-man-4.6.3-sec-4.9 lists some implementation-defined behavior, no help.
+    // This forum topic gives me help.
+    // 'enums as bitfields'
+    // http://www.velocityreviews.com/forums/t754551-enum-as-bitfields.html
+    //
+    // Regardless it is bit-field in enum or in int, the bit-filed value is int
+    // Signed or unsigned ??? I can only guess...unsigned?
+    //

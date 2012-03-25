@@ -53,11 +53,13 @@
 // 3. Valid dir-prefix are:
 //    [plug-inc]     plugin include directory for plugin deverlopers
 //    [gcc-src]      gcc source code root directory
+//    /              source root directory for this project
 //
 // For example:
 // -- tree.h:367                      example 1
 // -- [plug-inc]/tree.h:367           example 2
 // -- [gcc-src]/gcc/tree.c:8624       example 3
+// -- /doc/bitfield-in-enum.txt
 //
 //    'example 1' and 'example 2' are equivalent
 //
@@ -124,6 +126,25 @@ typedef const union tree_node *const_tree;  // -- coretypes.h:63
 
 namespace plugin_cxx
 {
+//Ray:
+// A helper class to manipulate 'enum tree_code'
+//
+// -- tree.h:42
+//enum tree_code {
+//#include "all-tree.def"
+//MAX_TREE_CODES
+//};
+class _tree_code_helper
+{
+	// refer to tree.h:368 code is 16-bits limited
+	Bf(16) const int m_code; //Discard 'enum tree_code' type info intentionally in header
+public:
+	explicit _tree_code_helper(int code):m_code(code){}
+public:
+	//Ray:...reuse macros? wrap a temp tree_base variable?
+	bool IntegralTypeP();         // -- tree.h:1021 P_368
+};
+
 // -- tree.h:347
 /* A tree node can represent a data type, a variable, an expression
    or a statement.  Each node has a TREE_CODE which says what kind of
@@ -153,34 +174,36 @@ namespace plugin_cxx
 // 2. various flags                     -- tree.h:370-400
 // 3. two other fields, one for flag padding, one for saving space
 //    --total bit count of flags ??? caculate it by our demo code
-// Hierachy tree
-//
-// tree_base                        -- tree.h:367 "xxx" Ray:copy from treestructs.def???
-// +-tree_common                    -- tree.h:410
-//   +-tree_int_cst                 -- tree.h:1409
-//   +-tree_real_cst                -- tree.h:1422
-//   +-tree_fixed_cst               -- tree.h:1434
+
+// Tree node class family hierachy map
+// struct name                    | defining position | printable name in streestruct.def
+// -------------------------------|-------------------|----------------------------------
+// tree_base                        -- tree.h:367      "base"--treestruct.def:33
+// +-tree_common                    -- tree.h:410      "common"--treestruct.def:34
+//   +-tree_int_cst                 -- tree.h:1409     "integer cst"--treestruct.def:35
+//   +-tree_real_cst                -- tree.h:1422     "real cst"--36
+//   +-tree_fixed_cst               -- tree.h:1434     "fixed cst"--37
 //   +-tree_string                  -- tree.h:1444
 //   +-tree_complex                 -- tree.h:1454
-//   +-tree_vector                  -- tree.h:1463
+//   +-tree_vector                  -- tree.h:1463     "vector"--38
 //   +-tree_identifier              -- tree.h:1486
 //   +-tree_list                    -- tree.h:1495
 //   +-tree_vec                     -- tree.h:1508
-//   +-tree_constructor             -- tree.h:1567
-//   +-tree_exp                     -- tree.h:1857
-//   +-tree_ssa_name                -- tree.h:1923
-//   +-tree_omp_clause              -- tree.h:1963
+//   +-tree_constructor             -- tree.h:1567     "constructor"--64
+//   +-tree_exp                     -- tree.h:1857     "exp"--59
+//   +-tree_ssa_name                -- tree.h:1923     "ssa name"--60
+//   +-tree_omp_clause              -- tree.h:1963     "omp clause"--65
 //   +-tree_block                   -- tree.h:2034
 //   +-tree_type                    -- tree.h:2332
 //   +-tree_binfo                   -- tree.h:2482
-//   +-tree_decl_minimal            -- tree.h:2579
+//   +-tree_decl_minimal            -- tree.h:2579     "decl minimal"--42
 //   | +-tree_decl_common           -- tree.h:2747
 //   | | +-tree_decl_with_rtl       -- tree.h:2863
 //   | |   +-tree_label_decl        -- tree.h:2954
 //   | |   +-tree_result_decl       -- tree.h:2964
 //   | |   +-tree_const_decl        -- tree.h:2969
 //   | |   +-tree_parm_decl         -- tree.h:2982
-//   | |   +-tree_decl_with_vis     -- tree.h:3121
+//   | |   +-tree_decl_with_vis     -- tree.h:3121     "decl with visibility"--46
 //   | |     +-tree_var_decl        -- tree.h:3205
 //   | |     +-tree_decl_non_common -- tree.h:3227
 //   | |       +-tree_function_decl -- tree.h:3369
@@ -191,6 +214,8 @@ namespace plugin_cxx
 //   +-tree_optimization_option     -- tree.h:3476
 //   +-tree_target_option           -- tree.h:3491
 //
+//Ray: For checking, refer to [gcc-src]/gcc/tree.c:350
+
 // -- plugin/include/tree.h:367
 //struct GTY(()) tree_base {
 //  ENUM_BITFIELD(tree_code) code : 16;
@@ -202,32 +227,18 @@ namespace plugin_cxx
 class ROOT_CLASS tree_base {
 protected:
 	tree m_node;
-	tree_base(const tree& node) = delete;
+	//tree_base(const tree& node) = delete;  // Why cannot explicitly delete it???
 	tree_base& operator = (const tree& node) = delete;
 public:
 	explicit tree_base(tree node):m_node(node){};
 	static bool _TryAattach(tree node);
 
 public: // Direct macro to member function map
-	//Ray:
-	// Bit-field in enum
-	// First, I do not understand why bit-field in enum.
-	// Then, I realized, enum constants only use limited bits in its storage,
-	// there are spare bits can be utilized for its variable... So that's it.
-	//
-	// ENUM_BITFIELD -- [plug-inc]/system.h:604-608
-	//
-	// I do not find the extension is documented in gcc-man-4.6.3
-	// Only gcc-man-4.6.3-sec-4.9 lists some implementation-defined behavior, no help.
-	// This forum topic gives me help.
-	// 'enums as bitfields'
-	// http://www.velocityreviews.com/forums/t754551-enum-as-bitfields.html
-	//
-	// Regardless it is bit-field in enum or in int, the bit-filed value is int
-	// Signed or unsigned ??? I can only guess...unsigned?
-	//
-	// Type safe is not very useful here, we should use them rarely. Just int, simple.
-	unsigned int Bf(16) TreeCode();                 // -- tree.h:656, M_368  //To more generic type, right?
+  //refer to --/doc/bitfield-in-enum.txt
+  // Type safe is not very useful here, we should use them rarely. Just int, simple.
+	//Ray: We should use following two memeber functions ONLY for communicating with
+	//     legacy gcc-object-in-c system. Not in our own C++ class hierachy system.
+	unsigned int Bf(16) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
 	unsigned int Bf(16) TreeSetCode(unsigned int);  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
 
 	// -- tree.h:661-941
@@ -263,6 +274,10 @@ public: // Direct macro to member function map
 
 public: // prediate mapping -- macro --> member function
 
+	//Ray: 
+	// This work is better to delegate to _tree_code_helper
+	// But the macros use TREE_CODE() .... which requires a tree_base
+	// So they are here...
 	// Generic type classifying service
 	bool IntegralTypeP();         // -- tree.h:1021 P_368
 	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
@@ -299,7 +314,6 @@ public: // flag-mapping  -- Direct macro to member function map // member access
 
 // -- plugin/include/tree.h:1105
 public:
-	bool TreeAddressable();  // -- tree.h:1119
 
 	//...
 	bool TreeStatic(); // -- tree.h:1142
@@ -325,9 +339,14 @@ class tree_common : public tree_base
 {
 public:
 	explicit tree_common(tree node) : tree_base(node){};
-// link list access
-public:
-	tree LinkListGetNext(void);
+public: // Direct macro to member function map
+	tree TreeChain() const; // -- tree.h:(862,938), M_412
+	tree TreeType() const;  // -- tree.h:(870,939), M_413
+public: // Intuitive name for macro purpose
+	// We may abstract CHAIN into std container interface
+	// iterator... C++11's foreach for(:) ...
+	// We really need it, our value is represented here!
+	//tree _LinkListGetNext(void);
 
 };
 
@@ -471,7 +490,7 @@ public:
 	explicit tree_identifier(/*const_*/ tree node) : tree_common(node) {};
 public: // Direct macro to member function map
 	unsigned int IdentifierLength(void);           // -- tree.h:1472, P_1488
-	const unsigned char * DentifierPointer(void);  // -- tree.h:1474, P_1488
+	const unsigned char * IdentifierPointer(void);  // -- tree.h:1474, P_1488  M_symtab.h:33
 	unsigned int HashValue(void);                  // -- tree.h:1476, P_1488
 public: // macros used to convert between data types
 	// -- tree.h:1479
@@ -606,15 +625,15 @@ public: // Intuitive name for macro purpose
 class tree_block : public tree_common
 {
 public: // Direct macro to member function map
-	M_ tree BlockVars(void);                  // -- tree.h:1983, M_2042
-	M_ tree BlockSubblocks(void);             // -- tree.h:1990, M_2045
-	M_ tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
-	M_ tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
-	M_ bool BlockAbstract(void);              // -- tree.h:1996, M_2037
-	M_ Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
-	M_ tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
-	M_ tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
-	M_ location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
+  tree BlockVars(void);                  // -- tree.h:1983, M_2042
+  tree BlockSubblocks(void);             // -- tree.h:1990, M_2045
+  tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
+  tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
+  bool BlockAbstract(void);              // -- tree.h:1996, M_2037
+  Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
+  tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
+  tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
+  location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
 public: // Intuitive name for macro purpose
 
 };
@@ -630,7 +649,9 @@ public: // Intuitive name for macro purpose
 class tree_type : public tree_common
 {
 public: // Direct macro to member function map
-	M_ unsigned int TypeUid(void);  // -- tree.h:2063
+	unsigned int TypeUid(void);  // -- tree.h:2063 M_2338
+	unsigned int TypeHash();     // -- tree.h:970==2063 P_2338
+	
 	M_ tree TypeSize(void);         // -- tree.h:2064
 	M_ tree TypeSizeUnit(void);     // -- tree.h:2065
 	/*virtual*/ tree TypeValues(void);       // -- tree.h:2066 - 2069  be virtual ?
@@ -701,14 +722,14 @@ public: // Direct macro to member function map
 	tree BinfoOffset(void);    // -- tree.h:2417
 	tree BinfoVtable(void);    // -- tree.h:2424
 	tree BinfoVirtuals(void);  // -- tree.h:2429
-	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
-	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
-	//...container access ....
+//	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
+//	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
+//	//...container access ....
 	tree BinfoVptrField(void);  // -- tree.h:2455
 	//
 	tree BinfoSubvttIndex(void);  // -- tree.h:2469
 	tree BinfoVptrIndex(void);    // -- tree.h:2473
-	tree BinfoInheritanceChain(void)  // -- tree.h:2479
+	tree BinfoInheritanceChain(void);  // -- tree.h:2479
 public: // Intuitive name for macro purpose
 
 };
