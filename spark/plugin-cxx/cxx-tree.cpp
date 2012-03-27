@@ -22,6 +22,7 @@ namespace plugin_cxx {
 
 bool _tree_code_helper::IntegralTypeP()
 {
+<<<<<<< HEAD
   bool p = INTEGRAL_TYPE_P(m_node);
   return p;
 }
@@ -55,6 +56,53 @@ const unsigned char * tree_identifier::IdentifierPointer(void) {
 	// c-standard-sec-???
 	const unsigned char * str =
 	__extension__ ({  //Ray: I like this extension, I was seeking similar language construct for a long time.
+=======
+	bool p =
+	({
+	struct ::tree_base w = {static_cast<enum tree_code>(m_code),};
+	union tree_node t = {w};
+	bool v = INTEGRAL_TYPE_P(&t);  //Ray: well ???
+	v;
+	});
+	return p;
+}
+
+
+unsigned int tree_base::TreeCode() const
+{
+	//Ray:
+	// Why we discard data type infomation here?
+	// I do not want to depend the enum defined in tree.h:42
+	// To keep the data type info, we have some choice:
+	// 1. include tree.h   No! Our design purpose is to avoid use it in client code
+	// 2. copy the enum    Dirty... It is still not type safe enought, 'enum class' is better
+	// ...TODO: explain more, and doc it in our formal document/design principle
+	unsigned int code = 
+	({
+		enum tree_code c = TREE_CODE(m_node);
+		static_cast<unsigned int>(c);
+	});
+	return code;
+}
+
+bool tree_base::IntegralTypeP()
+{
+	bool p = INTEGRAL_TYPE_P(m_node);  //??? right??
+	return p;
+}
+
+const unsigned char * tree_identifier::IdentifierPointer(void) {
+	//Ray:
+	// Bug in gcc, inconsistent data type  
+	// [plug-inc]/symtab.h:32     ht_identifier.str    : const unsigned char *
+	// [plug-inc]/tree.h:1475     IDENTIFIER_POINTER() : const char * 
+	// We adopt the actual data type, not the macro's, so we cast it.
+	// I do not understand why tree.h:1475 cast it?
+	// NOTICE, 'char' is implementation depended. 
+	// c-standard-sec-???
+	const unsigned char * str =
+	__extension__ ({  //Ray: I like this extension, I was finding it for a long time.
+>>>>>>> refs/remotes/origin/master
 	const char* s = IDENTIFIER_POINTER(m_node);
 	//static_cast<const unsigned char *>(str); //why cannot used this one? n3242-C++11-last-draft-sec-5.2.9
 	reinterpret_cast<const unsigned char *>(s);
@@ -97,6 +145,7 @@ unsigned int tree_type::TypeHash()
 	return hash;
 }
 
+<<<<<<< HEAD
 //////////////////////////////////////////
 bool call_expr::CallExprTailcall()
 {
@@ -104,6 +153,8 @@ bool call_expr::CallExprTailcall()
 	return flag;
 }
 
+=======
+>>>>>>> refs/remotes/origin/master
 
 }// end namespace plugin_cxx
 

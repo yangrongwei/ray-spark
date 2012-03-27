@@ -136,6 +136,7 @@ namespace plugin_cxx
 //Ray:
 // A helper class to manipulate 'enum tree_code'
 //
+<<<<<<< HEAD
 // object-in-c type system support helper
 //
 // Generic type classifying service
@@ -206,6 +207,22 @@ public:
 	// It seems we do not need mapping xxx_CHECK macros here
 	// They will be used in corresponding class constructor, looks like.
 
+=======
+// -- tree.h:42
+//enum tree_code {
+//#include "all-tree.def"
+//MAX_TREE_CODES
+//};
+class _tree_code_helper
+{
+	// refer to tree.h:368 code is 16-bits limited
+	Bf(16) const int m_code; //Discard 'enum tree_code' type info intentionally in header
+public:
+	explicit _tree_code_helper(int code):m_code(code){}
+public:
+	//Ray:...reuse macros? wrap a temp tree_base variable?
+	bool IntegralTypeP();         // -- tree.h:1021 P_368
+>>>>>>> refs/remotes/origin/master
 };
 
 // -- tree.h:347
@@ -254,7 +271,10 @@ public:
 //   +-tree_vec                     -- tree.h:1508
 //   +-tree_constructor             -- tree.h:1567     "constructor"--64
 //   +-tree_exp                     -- tree.h:1857     "exp"--59
+<<<<<<< HEAD
 //     +-//lots subclass defined in tree.def with _EXPR postfix
+=======
+>>>>>>> refs/remotes/origin/master
 //   +-tree_ssa_name                -- tree.h:1923     "ssa name"--60
 //   +-tree_omp_clause              -- tree.h:1963     "omp clause"--65
 //   +-tree_block                   -- tree.h:2034
@@ -315,12 +335,33 @@ public: // Direct macro to member function map
 //	tree StripUselessTypeConversion(tree);  // -- tree.h:1014
 
 public: // prediate mapping -- macro --> member function
+<<<<<<< HEAD
 	// to void bloat this class
 	// xxx_P are delegate to _tree_code_helper
 	//
 public: // xxx_CHECK macros
 	// delegate to _tree_code_helper too?
 	// or not appear in class interface at all?
+=======
+
+	//Ray: 
+	// This work is better to delegate to _tree_code_helper
+	// But the macros use TREE_CODE() .... which requires a tree_base
+	// So they are here...
+	// Generic type classifying service
+	bool IntegralTypeP();         // -- tree.h:1021 P_368
+	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
+	bool SatFixedPointTypeP();    // -- tree.h:1033 P_(368, 386)
+	bool FixedPointTypeP();       // -- tree.h:1038 P_368
+	bool ScalarFloatTypeP();      // -- tree.h:1042 P_368
+    //...till 1102
+//	// -- plugin/include/tree.h:1021
+//	//...
+//	// -- plugin/include/tree.h:1091
+//	bool CompleteTypeP();
+//	// -- plugin/include/tree.h:1094
+//	bool VoidTypeP();
+>>>>>>> refs/remotes/origin/master
 
 
 public: // flag-mapping  -- Direct macro to member function map // member access
@@ -694,11 +735,19 @@ public: // Intuitive name for macro purpose
 class tree_type : public tree_common
 {
 public: // Direct macro to member function map
+<<<<<<< HEAD
 	unsigned int TypeUid();   // -- tree.h:2063 M_2338
 	unsigned int TypeHash();  // -- tree.h:970==2063 P_2338
 	
 	tree TypeSize();          // -- tree.h:2064, M_2335
 	tree TypeSizeUnit();      // -- tree.h:2065, M_2336
+=======
+	unsigned int TypeUid(void);  // -- tree.h:2063 M_2338
+	unsigned int TypeHash();     // -- tree.h:970==2063 P_2338
+	
+	M_ tree TypeSize(void);         // -- tree.h:2064
+	M_ tree TypeSizeUnit(void);     // -- tree.h:2065
+>>>>>>> refs/remotes/origin/master
 	/*virtual*/ tree TypeValues(void);       // -- tree.h:2066 - 2069  be virtual ?
 	// various virtual candidate ??
 	// .minval .maxval should be virtual ....
