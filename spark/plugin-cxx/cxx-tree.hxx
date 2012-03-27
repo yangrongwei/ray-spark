@@ -42,6 +42,7 @@
 // For example
 //
 // virtual ??
+// It seems for each type/class xxx_CHECK, we should have a corresponding C++ class
 
 // Code Reference Comment Convention
 // This comment points out the original source code position in gcc 4.6.1
@@ -53,11 +54,13 @@
 // 3. Valid dir-prefix are:
 //    [plug-inc]     plugin include directory for plugin deverlopers
 //    [gcc-src]      gcc source code root directory
+//    /              source root directory for this project
 //
 // For example:
 // -- tree.h:367                      example 1
 // -- [plug-inc]/tree.h:367           example 2
 // -- [gcc-src]/gcc/tree.c:8624       example 3
+// -- /doc/bitfield-in-enum.txt
 //
 //    'example 1' and 'example 2' are equivalent
 //
@@ -107,12 +110,18 @@
 // to mark bit-field ??  n1548-c-standard-sec-6.7.2.1-para-9
 // 1 bit wide flag bit-field is mapped directly to C++ bool type, type safe purpse...
 #define Bf(width)         //bit-field, use less bits in corresponding integer type
+#define Bf_enum(width, enum_name)
+	// TODO:
+	// We need a strong-typed enum, not gcc's C enum in this header file, of course C++11's enum class
+	// This means we MUST copy the enum from gcc code, dirty, but it will give us type safe benefit..
+//	/*virtual */ M_ enum class machine_mode TypeMode(void);
+#define Enum(enum_name)  int  //avoid include enum definition
+//#define Enum(enum_name)  enum enum_name
+//#define Enum(enum_name)  enum class enum_name
 
-
+#define c_virtual   // virtual candidate for C++
 
 #include <stddef.h>
-
-
 
 // Copied from [plug-inc]/coretypes.h to avoid include the file.
 // Consequently, any file includes this file will not depend on GCC directly.
@@ -124,6 +133,81 @@ typedef const union tree_node *const_tree;  // -- coretypes.h:63
 
 namespace plugin_cxx
 {
+//Ray:
+// A helper class to manipulate 'enum tree_code'
+//
+// object-in-c type system support helper
+//
+// Generic type classifying service
+// -- tree.h:42
+//enum tree_code {
+//#include "all-tree.def"
+//MAX_TREE_CODES
+//};
+class _tree_code_helper
+{
+	// refer to tree.h:368 code is 16-bits limited
+	//Bf(16) const int m_code; //Discard 'enum tree_code' type info intentionally in header
+
+	tree m_node;
+	tree GetTreeNode();
+public:
+	explicit _tree_code_helper(tree node):m_node(node){}
+public:
+
+public:
+	//Ray:
+	// This work is better to delegate to _tree_code_helper
+	// But the macros use TREE_CODE() .... which requires a tree_base
+	// So they are here...
+
+//	// -- plugin/include/tree.h:1021
+//	//...
+//	// -- plugin/include/tree.h:1091
+//	bool CompleteTypeP();
+//	// -- plugin/include/tree.h:1094
+//	bool VoidTypeP();
+
+	//Ray: Following predication use both 'enum tree_code' and flags defined in 'tree_base'
+	//     It's better to put them in 'tree_base', but it will bloat the class too large...
+	//     Put here is clear, their purpose is used in object-in-c type system
+	bool ExprP();                 // -- tree.h:171
+	bool IntegralTypeP();         // -- tree.h:1021 P_368
+	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
+	bool SatFixedPointTypeP();    // -- tree.h:1033 P_(368, 386)
+	bool FixedPointTypeP();       // -- tree.h:1038 P_368
+	bool ScalarFloatTypeP();      // -- tree.h:1042 P_368
+	bool ComplexFloatTypeP();     // -- tree.h:1046 P_(368, 413) // tree_common
+	bool VectorFloatTypeP();      // -- tree.h:1052 P_(368, 413) // tree_common
+	bool FloatTypeP();            // -- tree.h:1060 P_(368, 413) // tree_common
+	bool DecimalFloatTypeP();     // -- tree.h:1067 P_(368, 2347, --machmode.h:85) // tree_type
+	bool RecordOrUnionTypeP();    // -- tree.h:1072 P_368
+	bool AggregateTypeP();        // -- tree.h:1080 P_368
+	bool PointerTypeP();          // -- tree.h:1087 P_368
+	bool CompleteTypeP();         // -- tree.h:1091 P_(2064, 2335) // tree_type
+	bool VoidTypeP();             // -- tree.h:1094 P_368
+	bool CompleteOrVoidTypeP();   // -- tree.h:1097 P_(1091, 1094) // tree_type
+	bool CompleteOrUnboundArrayTypeP(); // -- tree.h:1101 P_1091   // tree_type
+public:
+	// -- tree.h:661-941
+	// Various TREE_CHECK macro is not mapped here.
+	// They are implementation detail, for coding support.
+//	//Ray:
+//	// TREE_CHECK() macro            -- tree.h:(663, 917)
+//	// tree_check_failed() function  -- [gcc-src]/gcc/tree.c:8624
+//	// internal_error() function     -- [gcc-src]/gcc/diagnostic.c:832
+//	bool Try_TREE_CHECK();
+
+	// -- tree.h:947
+	// tree code class check ??
+	// It seems implementation detai, for coding support.
+
+	// Ray:
+	// It seems we do not need mapping xxx_CHECK macros here
+	// They will be used in corresponding class constructor, looks like.
+
+};
+
 // -- tree.h:347
 /* A tree node can represent a data type, a variable, an expression
    or a statement.  Each node has a TREE_CODE which says what kind of
@@ -153,34 +237,37 @@ namespace plugin_cxx
 // 2. various flags                     -- tree.h:370-400
 // 3. two other fields, one for flag padding, one for saving space
 //    --total bit count of flags ??? caculate it by our demo code
-// Hierachy tree
-//
-// tree_base                        -- tree.h:367 "xxx" Ray:copy from treestructs.def???
-// +-tree_common                    -- tree.h:410
-//   +-tree_int_cst                 -- tree.h:1409
-//   +-tree_real_cst                -- tree.h:1422
-//   +-tree_fixed_cst               -- tree.h:1434
+
+// Tree node class family hierachy map
+// struct name                    | defining position | printable name in streestruct.def
+// -------------------------------|-------------------|----------------------------------
+// tree_base                        -- tree.h:367      "base"--treestruct.def:33
+// +-tree_common                    -- tree.h:410      "common"--treestruct.def:34
+//   +-tree_int_cst                 -- tree.h:1409     "integer cst"--treestruct.def:35
+//   +-tree_real_cst                -- tree.h:1422     "real cst"--36
+//   +-tree_fixed_cst               -- tree.h:1434     "fixed cst"--37
 //   +-tree_string                  -- tree.h:1444
 //   +-tree_complex                 -- tree.h:1454
-//   +-tree_vector                  -- tree.h:1463
+//   +-tree_vector                  -- tree.h:1463     "vector"--38
 //   +-tree_identifier              -- tree.h:1486
 //   +-tree_list                    -- tree.h:1495
 //   +-tree_vec                     -- tree.h:1508
-//   +-tree_constructor             -- tree.h:1567
-//   +-tree_exp                     -- tree.h:1857
-//   +-tree_ssa_name                -- tree.h:1923
-//   +-tree_omp_clause              -- tree.h:1963
+//   +-tree_constructor             -- tree.h:1567     "constructor"--64
+//   +-tree_exp                     -- tree.h:1857     "exp"--59
+//     +-//lots subclass defined in tree.def with _EXPR postfix
+//   +-tree_ssa_name                -- tree.h:1923     "ssa name"--60
+//   +-tree_omp_clause              -- tree.h:1963     "omp clause"--65
 //   +-tree_block                   -- tree.h:2034
 //   +-tree_type                    -- tree.h:2332
 //   +-tree_binfo                   -- tree.h:2482
-//   +-tree_decl_minimal            -- tree.h:2579
+//   +-tree_decl_minimal            -- tree.h:2579     "decl minimal"--42
 //   | +-tree_decl_common           -- tree.h:2747
 //   | | +-tree_decl_with_rtl       -- tree.h:2863
 //   | |   +-tree_label_decl        -- tree.h:2954
 //   | |   +-tree_result_decl       -- tree.h:2964
 //   | |   +-tree_const_decl        -- tree.h:2969
 //   | |   +-tree_parm_decl         -- tree.h:2982
-//   | |   +-tree_decl_with_vis     -- tree.h:3121
+//   | |   +-tree_decl_with_vis     -- tree.h:3121     "decl with visibility"--46
 //   | |     +-tree_var_decl        -- tree.h:3205
 //   | |     +-tree_decl_non_common -- tree.h:3227
 //   | |       +-tree_function_decl -- tree.h:3369
@@ -191,6 +278,8 @@ namespace plugin_cxx
 //   +-tree_optimization_option     -- tree.h:3476
 //   +-tree_target_option           -- tree.h:3491
 //
+//Ray: For checking, refer to [gcc-src]/gcc/tree.c:350
+
 // -- plugin/include/tree.h:367
 //struct GTY(()) tree_base {
 //  ENUM_BITFIELD(tree_code) code : 16;
@@ -202,80 +291,36 @@ namespace plugin_cxx
 class ROOT_CLASS tree_base {
 protected:
 	tree m_node;
-	tree_base(const tree& node) = delete;
+	//tree_base(const tree& node) = delete;  // Why cannot explicitly delete it???
 	tree_base& operator = (const tree& node) = delete;
 public:
 	explicit tree_base(tree node):m_node(node){};
-	static bool _TryAattach(tree node);
 
 public: // Direct macro to member function map
-	//Ray:
-	// Bit-field in enum
-	// First, I do not understand why bit-field in enum.
-	// Then, I realized, enum constants only use limited bits in its storage,
-	// there are spare bits can be utilized for its variable... So that's it.
-	//
-	// ENUM_BITFIELD -- [plug-inc]/system.h:604-608
-	//
-	// I do not find the extension is documented in gcc-man-4.6.3
-	// Only gcc-man-4.6.3-sec-4.9 lists some implementation-defined behavior, no help.
-	// This forum topic gives me help.
-	// 'enums as bitfields'
-	// http://www.velocityreviews.com/forums/t754551-enum-as-bitfields.html
-	//
-	// Regardless it is bit-field in enum or in int, the bit-filed value is int
-	// Signed or unsigned ??? I can only guess...unsigned?
-	//
-	// Type safe is not very useful here, we should use them rarely. Just int, simple.
-	unsigned int Bf(16) TreeCode();                 // -- tree.h:656, M_368  //To more generic type, right?
+  //refer to --/doc/bitfield-in-enum.txt
+  // Type safe is not very useful here, we should use them rarely. Just int, simple.
+	//Ray: We should use following two memeber functions ONLY for communicating with
+	//     legacy gcc-object-in-c system. Not in our own C++ class hierachy system.
+	unsigned int Bf(16) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
 	unsigned int Bf(16) TreeSetCode(unsigned int);  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
-
-	// -- tree.h:661-941
-	// Various TREE_CHECK macro is not mapped here.
-	// They are implementation detail, for coding support.
-//	//Ray:
-//	// TREE_CHECK() macro  --defined in-- plugin/include/tree.h:663
-//	// tree_check_failed() function --defined in-- [gcc-src]/gcc/tree.c:8624
-//	// internal_error() function --defined in-- [gcc-src]/gcc/diagnostic.c:832
-//	bool Try_TREE_CHECK();
-
-	// -- tree.h:947
-	// tree code class check ??
-	// It seems implementation detai, for coding support.
-
-	// Ray:
-	// It seems we do not need mapping xxx_CHECK macros here
-	// They will be used in corresponding class constructor, looks like.
-
-
-    // -- tree.h:970  Ray: Not belong this class ???
-
-	size_t TreeHash();    // -- tree.h:974, P_ based-on this pointer ???
+	size_t TreeHash() const;                        // -- tree.h:974, P_ based-on m_node value
 
 	// skip from 977, later check it
 
-	//Ray: not in this class, and wrong
+	//Ray: not in this class, and wrong, to put to where ??
 //	// -- plugin/include/tree.h:993
-//	const_tree StripNops(const_tree);       // -- tree.h:993
-//	const_tree StripSignNops(const_tree);   // -- tree.h:998
-//	const_tree StripTypeNops(const_tree);   // -- tree.h:1003
-//	const_tree StripUselessTypeConversion(const_tree);  // -- tree.h:1014
+//	tree StripNops(const_tree);       // -- tree.h:993
+//	tree StripSignNops(const_tree);   // -- tree.h:998
+//	tree StripTypeNops(tree);   // -- tree.h:1003
+//	tree StripUselessTypeConversion(tree);  // -- tree.h:1014
 
 public: // prediate mapping -- macro --> member function
-
-	// Generic type classifying service
-	bool IntegralTypeP();         // -- tree.h:1021 P_368
-	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
-	bool SatFixedPointTypeP();    // -- tree.h:1033 P_(368, 386)
-	bool FixedPointTypeP();       // -- tree.h:1038 P_368
-	bool ScalarFloatTypeP();      // -- tree.h:1042 P_368
-    //...till 1102
-//	// -- plugin/include/tree.h:1021
-//	//...
-//	// -- plugin/include/tree.h:1091
-//	bool CompleteTypeP();
-//	// -- plugin/include/tree.h:1094
-//	bool VoidTypeP();
+	// to void bloat this class
+	// xxx_P are delegate to _tree_code_helper
+	//
+public: // xxx_CHECK macros
+	// delegate to _tree_code_helper too?
+	// or not appear in class interface at all?
 
 
 public: // flag-mapping  -- Direct macro to member function map // member access
@@ -291,15 +336,12 @@ public: // flag-mapping  -- Direct macro to member function map // member access
   
 	// multi-purpose flag, see code comments.
 	bool TreeAddressable();       // -- tree.h:1119 M_372
-	bool CallExprTailcall();      // -- tree.h:1124 M_372
-	// shit, so many purpose...
 
 
 	bool TypeSaturating();        // -- tree.h:1376 M_386
 
 // -- plugin/include/tree.h:1105
 public:
-	bool TreeAddressable();  // -- tree.h:1119
 
 	//...
 	bool TreeStatic(); // -- tree.h:1142
@@ -325,9 +367,14 @@ class tree_common : public tree_base
 {
 public:
 	explicit tree_common(tree node) : tree_base(node){};
-// link list access
-public:
-	tree LinkListGetNext(void);
+public: // Direct macro to member function map
+	tree TreeChain() const; // -- tree.h:(862,938), M_412
+	tree TreeType() const;  // -- tree.h:(870,939), M_413
+public: // Intuitive name for macro purpose
+	// We may abstract CHAIN into std container interface
+	// iterator... C++11's foreach for(:) ...
+	// We really need it, our value is represented here!
+	//tree _LinkListGetNext(void);
 
 };
 
@@ -471,7 +518,7 @@ public:
 	explicit tree_identifier(/*const_*/ tree node) : tree_common(node) {};
 public: // Direct macro to member function map
 	unsigned int IdentifierLength(void);           // -- tree.h:1472, P_1488
-	const unsigned char * DentifierPointer(void);  // -- tree.h:1474, P_1488
+	const unsigned char * IdentifierPointer(void);  // -- tree.h:1474, P_1488  M_symtab.h:33
 	unsigned int HashValue(void);                  // -- tree.h:1476, P_1488
 public: // macros used to convert between data types
 	// -- tree.h:1479
@@ -534,7 +581,11 @@ public: // Intuitive name for macro purpose
 //Ray: We really need a container wrapper for VEC, etc.
 //     keep it with standard (limited) 'std::' container semantics.
 
-
+//Ray:
+// It's an abstract class. For various xxx_EXPR tree.def classes.
+// tree.h:1572- has lots macro for fields and accessors
+// grouping them to subclass according to tree.def
+//
 // -- tree.h:1857
 //struct GTY(()) tree_exp {
 //  struct tree_common common;
@@ -546,10 +597,23 @@ public: // Intuitive name for macro purpose
 //};
 class tree_exp : public tree_common
 {
+// type checking services, for contract programming
+// it is different from member access macros
+public:
+	static tree ExprCheck(tree);  // -- tree.h:796
+
 public: // Direct macro to member function map
-	location_t SetExprLocation(location_t value);  // tree.h:1602, Ms_1859
-	//??ExprFilename(void); // tree.h:1605 P_
-	//??ExprLineno(void);   // tree.h:1606 P_
+	location_t SetExprLocation(location_t value);  // -- tree.h:1602, Ms_1859
+	bool ExprHasLocation();          // -- tree.h:1603, P_(1859, UNKNOWN_LOCATION)
+	//??ExprFilename(void);  // -- tree.h:1605 P_
+	//??ExprLineno(void);    // -- tree.h:1606 P_
+
+	/* Compute the number of operands in an expression node NODE.  For
+	   tcc_vl_exp nodes like CALL_EXPRs, this is stored in the node itself,
+	   otherwise it is looked up from the node's code.  */
+	/*c_virtual*/ int TreeOperandLength(); // -- tree.h:1580==5607 P_( )
+	tree TreeOperand(int index); // -- tree.h:1581==835 P_593
+
 public: // Intuitive name for macro purpose
 
 };
@@ -606,15 +670,15 @@ public: // Intuitive name for macro purpose
 class tree_block : public tree_common
 {
 public: // Direct macro to member function map
-	M_ tree BlockVars(void);                  // -- tree.h:1983, M_2042
-	M_ tree BlockSubblocks(void);             // -- tree.h:1990, M_2045
-	M_ tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
-	M_ tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
-	M_ bool BlockAbstract(void);              // -- tree.h:1996, M_2037
-	M_ Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
-	M_ tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
-	M_ tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
-	M_ location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
+  tree BlockVars(void);                  // -- tree.h:1983, M_2042
+  tree BlockSubblocks(void);             // -- tree.h:1990, M_2045
+  tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
+  tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
+  bool BlockAbstract(void);              // -- tree.h:1996, M_2037
+  Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
+  tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
+  tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
+  location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
 public: // Intuitive name for macro purpose
 
 };
@@ -630,9 +694,11 @@ public: // Intuitive name for macro purpose
 class tree_type : public tree_common
 {
 public: // Direct macro to member function map
-	M_ unsigned int TypeUid(void);  // -- tree.h:2063
-	M_ tree TypeSize(void);         // -- tree.h:2064
-	M_ tree TypeSizeUnit(void);     // -- tree.h:2065
+	unsigned int TypeUid();   // -- tree.h:2063 M_2338
+	unsigned int TypeHash();  // -- tree.h:970==2063 P_2338
+	
+	tree TypeSize();          // -- tree.h:2064, M_2335
+	tree TypeSizeUnit();      // -- tree.h:2065, M_2336
 	/*virtual*/ tree TypeValues(void);       // -- tree.h:2066 - 2069  be virtual ?
 	// various virtual candidate ??
 	// .minval .maxval should be virtual ....
@@ -647,44 +713,41 @@ public: // Direct macro to member function map
 	M_ tree TypeMaxval(void);       // -- tree.h:2086, M_2369
 	M_ tree TypeMinval(void);       // -- tree.h:2087, M_2368
 
-	// TODO:
-	// We need a strong-typed enum, not gcc's C enum in this header file, of course C++11's enum class
-	// This means we MUST copy the enum from gcc code, dirty, but it will give us type safe benefit..
-//	/*virtual */ M_ enum class machine_mode TypeMode(void);
-//	Ms_ enum class machine_mode SetTypeMode(enum class machine_mode);
+	Bf_enum(8, machine_mode) unsigned TypeMode();  // -- tree.h:2091 , M_2347
+    Bf_enum(8, machine_mode) unsigned SetTypeMode(unsigned); // -- tree.h:2094  , Ms_2347
 
-	M_ tree TypeCanonical(void);    // -- tree.h:2113, M_2374
-	M_ struct lang_type * TypeLangSpecific(void);  // -- tree.h:2125, M_2376
-	M_ tree TypeAttributes(void);   // -- tree.h:2149, M_2337
-	M_ unsigned int TypeAlign(void);// -- tree.h:2153, M_2358
+	tree TypeCanonical();    // -- tree.h:2113, M_2374
+	struct lang_type * TypeLangSpecific();  // -- tree.h:2125, M_2376
+	tree TypeAttributes();   // -- tree.h:2149, M_2337
+	unsigned int TypeAlign();// -- tree.h:2153, M_2358
 //	/*virtual ??*/ M_ bool TypeNoForceBlk(void);   // -- tree.h:2174, M_2341
-	M_ bool TypeRestrict(void);     // -- tree.h:2195, M_2344
+	bool TypeRestrict();     // -- tree.h:2195, M_2344
 
 	// various semantics, ?? how to handle ??
 	// define semantic specific memeber function in subclass?
 	// Hide this member function in this class ?? Too arbitrary ??
 	// M_ bool TypeStringFlag(void);   // -- tree.h:2253, M_2349
 
-	M_ bool TypeLangFlag0(void);    // -- tree.h:2238, M_2350
-	M_ bool TypeLangFlag1(void);    // -- tree.h:2238, M_2351
-	M_ bool TypeLangFlag2(void);    // -- tree.h:2238, M_2352
-	M_ bool TypeLangFlag3(void);    // -- tree.h:2238, M_2353
-	M_ bool TypeLangFlag4(void);    // -- tree.h:2238, M_2354
-	M_ bool TypeLangFlag5(void);    // -- tree.h:2238, M_2355
-	M_ bool TypeLangFlag6(void);    // -- tree.h:2238, M_2356
+	bool TypeLangFlag0();    // -- tree.h:2238, M_2350
+	bool TypeLangFlag1();    // -- tree.h:2238, M_2351
+	bool TypeLangFlag2();    // -- tree.h:2238, M_2352
+	bool TypeLangFlag3();    // -- tree.h:2238, M_2353
+	bool TypeLangFlag4();    // -- tree.h:2238, M_2354
+	bool TypeLangFlag5();    // -- tree.h:2238, M_2355
+	bool TypeLangFlag6();    // -- tree.h:2238, M_2356
 
-	M_ bool TypeNeedsConstructing(void); // -- tree.h:2277, M_2342
-    M_ Bf(2) unsigned TypeContainsPlaceholderInternal(void); // -- tree.h:2300, M_2345
+	bool TypeNeedsConstructing(); // -- tree.h:2277, M_2342
+    Bf(2) unsigned TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
 
     // Following three are defined within a union, mark it??
-    M_ int TypeSymtabAddress(void);             // -- tree.h:2312, M_2363
-    M_ const char * TypeSymtabPointer(void);    // -- tree.h:2316, M_2364
-    M_ struct die_struct * TypeSymtabDie(void); // -- tree.h:2320, M_2365
+    int TypeSymtabAddress();             // -- tree.h:2312, M_2363
+    const char * TypeSymtabPointer();    // -- tree.h:2316, M_2364
+    struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2365
 
 public: // Intuitive name for macro purpose
-    const char * _GetSymtabAsAString(void);
-    int _GetSymtabAsAnInteger(void);
-    struct die_struct * _GetSymtabAsAPointToADwarfDie(void);
+    const char * _GetSymtabAsAString();
+    int _GetSymtabAsAnInteger();
+    struct die_struct * _GetSymtabAsAPointToADwarfDie();
 };
 
 
@@ -701,14 +764,14 @@ public: // Direct macro to member function map
 	tree BinfoOffset(void);    // -- tree.h:2417
 	tree BinfoVtable(void);    // -- tree.h:2424
 	tree BinfoVirtuals(void);  // -- tree.h:2429
-	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
-	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
-	//...container access ....
+//	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
+//	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
+//	//...container access ....
 	tree BinfoVptrField(void);  // -- tree.h:2455
 	//
 	tree BinfoSubvttIndex(void);  // -- tree.h:2469
 	tree BinfoVptrIndex(void);    // -- tree.h:2473
-	tree BinfoInheritanceChain(void)  // -- tree.h:2479
+	tree BinfoInheritanceChain(void);  // -- tree.h:2479
 public: // Intuitive name for macro purpose
 
 };
@@ -775,13 +838,13 @@ class tree_field_decl : public tree_decl_common
 public: // macro to member function map
 };
 
-// -- tree.h:2954
+// -- tree.h:2957
 //struct GTY(()) tree_label_decl {
 //  struct tree_decl_with_rtl common;
 //  int label_decl_uid;
 //  int eh_landing_pad_nr;
 //};
-class tree_label_decl : public tree_decl_with_rtl
+class tree_label_decl : public tree_decl_with_rtl  //requires LABEL_DECL_CHECK
 {
 public: // macro to member function map
 	int LabelDeclUid();    // -- tree.h:2944

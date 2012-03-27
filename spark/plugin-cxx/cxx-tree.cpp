@@ -14,12 +14,52 @@
 #include "tree.h"
 
 #include "cxx-tree.hxx"
-//#include "coretypes.h"
+#include "cxx-tree-def.hxx"
+
+#pragma GCC poison TREE_OPERAND_LENGTH tree_operand_length
 
 namespace plugin_cxx {
 
-const char *tree_identifier::DentifierPointer(void) {
-	const char* str = IDENTIFIER_POINTER(m_node);
+bool _tree_code_helper::IntegralTypeP()
+{
+  bool p = INTEGRAL_TYPE_P(m_node);
+  return p;
+}
+
+
+unsigned int tree_base::TreeCode() const
+{
+	//Ray:
+	// Why we discard data type infomation here?
+	// I do not want to depend the enum defined in tree.h:42
+	// To keep the data type info, we have some choice:
+	// 1. include tree.h   No! Our design purpose is to avoid use it in client code
+	// 2. copy the enum    Dirty... It is still not type safe enought, 'enum class' is better
+	// ...TODO: explain more, and doc it in our formal document/design principle
+	unsigned int code = 
+	({
+		enum tree_code c = TREE_CODE(m_node);
+		static_cast<unsigned int>(c);
+	});
+	return code;
+}
+
+const unsigned char * tree_identifier::IdentifierPointer(void) {
+	//Ray:
+	// Bug in gcc, inconsistent data type  
+	// [plug-inc]/symtab.h:32     ht_identifier.str    : const unsigned char *
+	// [plug-inc]/tree.h:1475     IDENTIFIER_POINTER() : const char * 
+	// We adopt the actual data type, not the macro's, so we cast it.
+	// I do not understand why tree.h:1475 cast it?
+	// NOTICE, 'char' is implementation depended. 
+	// c-standard-sec-???
+	const unsigned char * str =
+	__extension__ ({  //Ray: I like this extension, I was finding it for a long time.
+	const char* s = IDENTIFIER_POINTER(m_node);
+	//static_cast<const unsigned char *>(str); //why cannot used this one? n3242-C++11-last-draft-sec-5.2.9
+	reinterpret_cast<const unsigned char *>(s);
+	});
+	
 	return str;
 }
 
@@ -45,12 +85,25 @@ tree tree_identifier::HtIdentToGccIdent(struct ht_identifier *ht_ident_ptr)
 }
 
 
-
-tree tree_common::LinkListGetNext(void)
+unsigned int tree_type::TypeUid(void)
 {
-	tree next = TREE_CHAIN(m_node);
-	return next;
+	unsigned int uid = TYPE_UID(m_node);
+	return uid;
 }
+
+unsigned int tree_type::TypeHash()
+{
+	unsigned int hash = TYPE_HASH(m_node);
+	return hash;
+}
+
+//////////////////////////////////////////
+bool call_expr::CallExprTailcall()
+{
+	bool flag = CALL_EXPR_TAILCALL(m_node);
+	return flag;
+}
+
 
 }// end namespace plugin_cxx
 
