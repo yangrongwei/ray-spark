@@ -348,8 +348,20 @@ public:
 	//...
 	bool TreeSideEffects(); // -- tree.h:1228
 
-	//...
-	bool TreeLangFlag0(); // -- tree.h:1379
+	/* These flags are available for each language front end to use internally.  */
+	bool TreeLangFlag0(); // -- tree.h:1379 M_389
+	bool TreeLangFlag1(); // -- tree.h:1380 M_390
+	bool TreeLangFlag2(); // -- tree.h:1381 M_391
+	bool TreeLangFlag3(); // -- tree.h:1382 M_392
+	bool TreeLangFlag4(); // -- tree.h:1383 M_393
+	bool TreeLangFlag5(); // -- tree.h:1384 M_394
+	bool TreeLangFlag6(); // -- tree.h:1385 M_395
+
+
+	/* Used to keep track of visited nodes in tree traversals.  This is set to
+	   0 by copy_node and make_node.  */
+	bool TreeVisited(); // -- tree.h:2248 M_397
+
 public: // Direct macro to member function map
 
 
@@ -720,7 +732,7 @@ public: // Direct macro to member function map
 	bool TypeAliasSetKnownP();   // -- tree.h:2145 P_2359
 	tree TypeAttributes();    // -- tree.h:2149, M_2337
 	unsigned int TypeAlign(); // -- tree.h:2153, M_2358
-	bool TypeUserAlign();     // -- tree.h:2157 M_399 tree_base
+	bool TypeUserAlign();     // -- tree.h:2157 M_(399 tree_base)
 	int TypeAlignUnit();      // -- tree.h:2160 P_(2153, defaults.h:423)
 
 	// -- tree.h:2162
@@ -739,31 +751,65 @@ public: // Direct macro to member function map
 	   its size.  */
 	bool TypeNoForceBlk();   // -- tree.h:2174, M_2341
 
-	bool TypeVolatile();   // -- tree.h:2188 M_373
-	bool TypeReadonly();   // -- tree.h:2101 M_373
+	/* Nonzero in a type considered volatile as a whole.  */
+	bool TypeVolatile();   // -- tree.h:2188 M_(373 tree_base)
 
-	bool TypeRestrict();     // -- tree.h:2195, M_2344
+	/* Means this type is const-qualified.  */
+	bool TypeReadonly();   // -- tree.h:2101 M_(374 tree_base)
 
-	// various semantics, ?? how to handle ??
-	// define semantic specific memeber function in subclass?
-	// Hide this member function in this class ?? Too arbitrary ??
-	// M_ bool TypeStringFlag(void);   // -- tree.h:2253, M_2349
+	/* If nonzero, this type is `restrict'-qualified, in the C sense of
+	   the term.  */
+	bool TypeRestrict();     // -- tree.h:2195 M_(2344 tree_type)
 
+	/* If nonzero, type's name shouldn't be emitted into debug info.  */
+	bool TypeNameless();  // -- tree.h:2198 M_(400 tree_base)
+
+	/* The address space the type is in.  */
+	Bf(8, unsigned) TypeAddrSpace(); // -- tree.h:2201 M_(407 tree_base)
+
+	//Ray: They are different from TREE_LANG_FLAG_xxx (tree_base)
+	/* These flags are available for each language front end to use internally.  */
 	bool TypeLangFlag0();    // -- tree.h:2238, M_2350
-	bool TypeLangFlag1();    // -- tree.h:2238, M_2351
-	bool TypeLangFlag2();    // -- tree.h:2238, M_2352
-	bool TypeLangFlag3();    // -- tree.h:2238, M_2353
-	bool TypeLangFlag4();    // -- tree.h:2238, M_2354
-	bool TypeLangFlag5();    // -- tree.h:2238, M_2355
-	bool TypeLangFlag6();    // -- tree.h:2238, M_2356
+	bool TypeLangFlag1();    // -- tree.h:2239, M_2351
+	bool TypeLangFlag2();    // -- tree.h:2240, M_2352
+	bool TypeLangFlag4();    // -- tree.h:2241, M_2354
+	bool TypeLangFlag5();    // -- tree.h:2242, M_2355
+	bool TypeLangFlag3();    // -- tree.h:2243, M_2353
+	bool TypeLangFlag6();    // -- tree.h:2244, M_2356
 
+
+	/* If set in an ARRAY_TYPE, indicates a string type (for languages
+	   that distinguish string from array of char).
+	   If set in a INTEGER_TYPE, indicates a character type.  */
+	bool TypeStringFlag();   // -- tree.h:2253, M_2349
+
+	/* Indicates that objects of this type must be initialized by calling a
+	   function when they are created.  */
 	bool TypeNeedsConstructing(); // -- tree.h:2277, M_2342
-    Bf(2, unsigned) TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
 
-    // Following three are defined within a union, mark it??
-    int TypeSymtabAddress();             // -- tree.h:2312, M_2363
-    const char * TypeSymtabPointer();    // -- tree.h:2316, M_2364
-    struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2365
+	/* Indicated that objects of this type should be laid out in as
+	   compact a way as possible.  */
+	bool TypePacked(); // -- tree.h:2295 M_(398 tree_base)
+
+private: //???
+	/* Used by type_contains_placeholder_p to avoid recomputation.
+	   Values are: 0 (unknown), 1 (false), 2 (true).  Never access
+	   this field directly.  */
+    Bf(2, unsigned) TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
+public:
+
+    // Following three are defined within one union with different type
+    /* Symtab field as an integer.  Used by stabs generator in dbxout.c to
+       hold the type's number in the generated stabs.  */
+    int TypeSymtabAddress();             // -- tree.h:2312, M_2366.2363
+
+    /* Symtab field as a string.  Used by COFF generator in sdbout.c to
+       hold struct/union type tag names.  */
+    const char * TypeSymtabPointer();    // -- tree.h:2316, M_2366.2364
+
+    /* Symtab field as a pointer to a DWARF DIE.  Used by DWARF generator
+       in dwarf2out.c to point to the DIE generated for the type.  */
+    struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2366.2365
 
 public: // Intuitive name for macro purpose
     const char * _GetSymtabAsAString();

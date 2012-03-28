@@ -218,7 +218,14 @@ class complex_type
 //DEFTREECODE (VECTOR_TYPE, "vector_type", tcc_type, 0)
 class vector_type
 {
-
+public:
+	/* For a VECTOR_TYPE, this is the number of sub-parts of the vector.  */
+	unsigned HOST_WIDE_INT TypeVectorSubparts();  // -- tree.h:2262 P_2340
+	/* Set precision to n when we have 2^n sub-parts of the vector.  */
+	unsigned HOST_WIDE_INT SetTypeVectorSubparts(unsigned HOST_WIDE_INT ); // -- tree.h:2267 Ps_2340
+	/* Nonzero in a VECTOR_TYPE if the frontends should not emit warnings
+	   about missing conversions to other vector types of the same size.  */
+	bool TypeVectorOpaque();  // -- tree.h:2272 M_(388 tree_base)
 };
 
 // -- tree.def:191
@@ -242,6 +249,17 @@ class array_type
 {
 public:
 	tree TypeDomain(); // -- tree.h:2067 M_2334
+
+	/* If non-NULL, this is an upper bound of the size (in bytes) of an
+	   object of the given ARRAY_TYPE.  This allows temporaries to be
+	   allocated.  */
+	tree TypeArrayMaxSize(); // -- tree.h:2258 M_2369
+
+	/* For an ARRAY_TYPE, indicates that it is not permitted to take the
+	   address of a component of the type.  This is the counterpart of
+	   DECL_NONADDRESSABLE_P for arrays, see the definition of this flag.  */
+	bool TypeNonaliasedComponent(); // -- tree.h:2290 M_2343
+
 public:
 	//tree _TypeOfAnArrayElement();
 };
@@ -267,6 +285,12 @@ public:
 	tree TypeMethods(); // -- tree.h:2070 M_2369
 	tree TypeVfield();  // -- tree.h:2071 M_2368
 	tree TypeBinfo();   // -- tree.h:2131 M_2372
+
+	/* Indicates that a UNION_TYPE object should be passed the same way that
+	   the first union alternative would be passed, or that a RECORD_TYPE
+	   object should be passed the same way that the first (and only) member
+	   would be passed.  */
+	bool TypeTransparentAggr(); // -- tree.h:2284 M_2343
 public:
 	//?? static const Enum(tree_code)[] _GetClassTreeCodes(); //Ray: to get valid tree_codes
 };
