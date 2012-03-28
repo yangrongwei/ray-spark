@@ -14,7 +14,8 @@
 #include "tree.h"
 
 #include "cxx-tree.hxx"
-#include "cxx-tree-def.hxx"
+#include "cxx-tree-def-type.hxx"
+#include "cxx-tree-def-expr.hxx"
 
 #pragma GCC poison TREE_OPERAND_LENGTH tree_operand_length
 
@@ -100,8 +101,9 @@ unsigned int tree_type::TypeHash()
 //////////////////////////////////////////
 bool call_expr::CallExprTailcall()
 {
-	bool flag = CALL_EXPR_TAILCALL(m_node);
-	return flag;
+//	bool flag = CALL_EXPR_TAILCALL(m_node);
+//	return flag;
+	throw 13;
 }
 
 

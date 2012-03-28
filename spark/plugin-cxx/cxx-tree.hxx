@@ -75,19 +75,16 @@
 //     Cost? Negligible comparing with benefits.
 //
 // Macro purpose marker list:
-//  M_      type specific Member variable getter macro
-//  Ms_     type specific Member variable Setter macro
-//  P_      like property (value is caculated on-the-foly) accessor
+//  M_      (type specific) Member variable getter macro
+//  Ms_     (type specific) Member variable Setter macro
+//  P_      Property (value is caculated on-the-foly) getter
+//  Ps_     Property Setter
 //
 //  Pc_   == C_ ??
 //  C_      aggregation (container) helper ?? accessor ??
 //          // Why not Container ?  Easy to confusing with class,
 //          // Somewhat borrowed from UML
 //
-//  Forward reference, M_ marks it's a type specific member getter
-// to mark memeber access ?? (with attribute to verify our code ?? where to put ? I like leading...)
-#define M_          // type specific member getter
-#define Ms_         // type specific member setter
 
 // Abbriviation list (sadly, used in intuitive name)
 //   I want to use full name whenever possible in my coined intuitive name.
@@ -109,12 +106,14 @@
 
 // to mark bit-field ??  n1548-c-standard-sec-6.7.2.1-para-9
 // 1 bit wide flag bit-field is mapped directly to C++ bool type, type safe purpse...
-#define Bf(width)         //bit-field, use less bits in corresponding integer type
-#define Bf_enum(width, enum_name)
+#define Bf(width, type)   type      //bit-field, use less bits in corresponding integer type
+#define Bf_enum(width, enum_name, int_name) int_name
+
 	// TODO:
 	// We need a strong-typed enum, not gcc's C enum in this header file, of course C++11's enum class
 	// This means we MUST copy the enum from gcc code, dirty, but it will give us type safe benefit..
 //	/*virtual */ M_ enum class machine_mode TypeMode(void);
+
 #define Enum(enum_name)  int  //avoid include enum definition
 //#define Enum(enum_name)  enum enum_name
 //#define Enum(enum_name)  enum class enum_name
@@ -301,8 +300,8 @@ public: // Direct macro to member function map
   // Type safe is not very useful here, we should use them rarely. Just int, simple.
 	//Ray: We should use following two memeber functions ONLY for communicating with
 	//     legacy gcc-object-in-c system. Not in our own C++ class hierachy system.
-	unsigned int Bf(16) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
-	unsigned int Bf(16) TreeSetCode(unsigned int);  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
+	Bf_enum(16, tree_code, unsigned int) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
+	Bf_enum(16, tree_code, unsigned int) TreeSetCode( Bf_enum(16, tree_code, unsigned int) );  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
 	size_t TreeHash() const;                        // -- tree.h:974, P_ based-on m_node value
 
 	// skip from 977, later check it
@@ -675,7 +674,7 @@ public: // Direct macro to member function map
   tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
   tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
   bool BlockAbstract(void);              // -- tree.h:1996, M_2037
-  Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
+  Bf(31, unsigned) BlockNumber(void);     // -- tree.h:2001, M_2038
   tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
   tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
   location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
@@ -693,34 +692,56 @@ public: // Intuitive name for macro purpose
 //  //...
 class tree_type : public tree_common
 {
-public: // Direct macro to member function map
-	unsigned int TypeUid();   // -- tree.h:2063 M_2338
+public:
 	unsigned int TypeHash();  // -- tree.h:970==2063 P_2338
-	
-	tree TypeSize();          // -- tree.h:2064, M_2335
-	tree TypeSizeUnit();      // -- tree.h:2065, M_2336
-	/*virtual*/ tree TypeValues(void);       // -- tree.h:2066 - 2069  be virtual ?
-	// various virtual candidate ??
-	// .minval .maxval should be virtual ....
-	//
-	M_ tree TypePointerTo(void);    // -- tree.h:2075
-	M_ tree TypeReferenceTo(void);  // -- tree.h:2076
-	M_ Bf(10) unsigned int TypePrecision(void);  // -- tree.h:2340
-	M_ tree TypeName(void);         // -- tree.h:2082
-	M_ tree TypeNextVariant(void);  // -- tree.h:2083
-	M_ tree TypeMainVariant(void);  // -- tree.h:2084
-	M_ tree TypeContext(void);      // -- tree.h:2085
-	M_ tree TypeMaxval(void);       // -- tree.h:2086, M_2369
-	M_ tree TypeMinval(void);       // -- tree.h:2087, M_2368
-
-	Bf_enum(8, machine_mode) unsigned TypeMode();  // -- tree.h:2091 , M_2347
-    Bf_enum(8, machine_mode) unsigned SetTypeMode(unsigned); // -- tree.h:2094  , Ms_2347
-
-	tree TypeCanonical();    // -- tree.h:2113, M_2374
+public: // Direct macro to member function map
+	unsigned int TypeUid();      // -- tree.h:2063 M_2338
+	tree TypeSize();             // -- tree.h:2064 M_2335
+	tree TypeSizeUnit();         // -- tree.h:2065 M_2336
+	tree TypeCachedValues();     // -- tree.h:2066 M_2334
+	tree TypePointerTo();        // -- tree.h:2075 M_2360
+	tree TypeReferenceTo();      // -- tree.h:2076 M_2361
+	Bf(10, unsigned int) TypePrecision(); // -- tree.h:2340 M_2340
+	tree TypeName();         // -- tree.h:2082 M_2367
+	tree TypeNextVariant();  // -- tree.h:2083 M_2370
+	tree TypeMainVariant();  // -- tree.h:2084 M_2371
+	tree TypeContext();      // -- tree.h:2085 M_2373
+	tree TypeMaxval();       // -- tree.h:2086 M_2369
+	tree TypeMinval();       // -- tree.h:2087 M_2368
+	Bf_enum(8, machine_mode, unsigned) TypeMode();  // -- tree.h:2091 , M_2347
+    Bf_enum(8, machine_mode, unsigned) SetTypeMode( Bf_enum(8, machine_mode, unsigned) ); // -- tree.h:2094  , Ms_2347
+	tree TypeCanonical();        // -- tree.h:2113, M_2374
+	bool TypeStructuralEqualityP();   // -- tree.h:2120 P_(2113, 2374)
+	bool SetTypeStructuralEquality(); // -- tree.h:2123 Ps_(2113, 2374)
 	struct lang_type * TypeLangSpecific();  // -- tree.h:2125, M_2376
-	tree TypeAttributes();   // -- tree.h:2149, M_2337
-	unsigned int TypeAlign();// -- tree.h:2153, M_2358
-//	/*virtual ??*/ M_ bool TypeNoForceBlk(void);   // -- tree.h:2174, M_2341
+
+
+	alias_set_type TypeAliasSet();    // -- tree.h:2141 M_2359
+	bool TypeAliasSetKnownP();   // -- tree.h:2145 P_2359
+	tree TypeAttributes();    // -- tree.h:2149, M_2337
+	unsigned int TypeAlign(); // -- tree.h:2153, M_2358
+	bool TypeUserAlign();     // -- tree.h:2157 M_399 tree_base
+	int TypeAlignUnit();      // -- tree.h:2160 P_(2153, defaults.h:423)
+
+	// -- tree.h:2162
+	/* If your language allows you to declare types, and you want debug info
+	   for them, then you need to generate corresponding TYPE_DECL nodes.
+	   These "stub" TYPE_DECL nodes have no name, and simply point at the
+	   type node.  You then set the TYPE_STUB_DECL field of the type node
+	   to point back at the TYPE_DECL node.  This allows the debug routines
+	   to know that the two nodes represent the same type, so that we only
+	   get one debug info record for them.  */
+	tree TypeStubDecl();  // -- tree.h:2169 P_(862, 412 tree_common.chain)
+
+	// -- tree.h:2171
+	/* In a RECORD_TYPE, UNION_TYPE or QUAL_UNION_TYPE, it means the type
+	   has BLKmode only because it lacks the alignment requirement for
+	   its size.  */
+	bool TypeNoForceBlk();   // -- tree.h:2174, M_2341
+
+	bool TypeVolatile();   // -- tree.h:2188 M_373
+	bool TypeReadonly();   // -- tree.h:2101 M_373
+
 	bool TypeRestrict();     // -- tree.h:2195, M_2344
 
 	// various semantics, ?? how to handle ??
@@ -737,7 +758,7 @@ public: // Direct macro to member function map
 	bool TypeLangFlag6();    // -- tree.h:2238, M_2356
 
 	bool TypeNeedsConstructing(); // -- tree.h:2277, M_2342
-    Bf(2) unsigned TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
+    Bf(2, unsigned) TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
 
     // Following three are defined within a union, mark it??
     int TypeSymtabAddress();             // -- tree.h:2312, M_2363
