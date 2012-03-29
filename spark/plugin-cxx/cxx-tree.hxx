@@ -118,6 +118,9 @@
 //#define Enum(enum_name)  enum enum_name
 //#define Enum(enum_name)  enum class enum_name
 
+// For VEC(T, A) * -- vec.h:509
+#define Vec_ptr(elemet_type, vec_alloc_strategy) void *
+
 #define c_virtual   // virtual candidate for C++
 
 #include <stddef.h>
@@ -818,7 +821,21 @@ public: // Intuitive name for macro purpose
 };
 
 
+// -- tree.h:2379
+/* Define accessor macros for information about type inheritance
+   and basetypes.
 
+   A "basetype" means a particular usage of a data type for inheritance
+   in another type.  Each such basetype usage has its own "binfo"
+   object to describe it.  The binfo object is a TREE_VEC node.
+
+   Inheritance is represented by the binfo nodes allocated for a
+   given type.  For example, given types C and D, such that D is
+   inherited by C, 3 binfo nodes will be allocated: one for describing
+   the binfo properties of C, similarly one for D, and one for
+   describing the binfo properties of D as a base type for C.
+   Thus, given a pointer to class C, one can get a pointer to the binfo
+   of D acting as a basetype for C by looking at C's binfo's basetypes.  */
 // -- tree.h:2482
 //struct GTY (()) tree_binfo {
 //  struct tree_common common;
@@ -828,19 +845,93 @@ public: // Intuitive name for macro purpose
 class tree_binfo : public tree_common
 {
 public: // Direct macro to member function map
-	tree BinfoOffset(void);    // -- tree.h:2417
-	tree BinfoVtable(void);    // -- tree.h:2424
-	tree BinfoVirtuals(void);  // -- tree.h:2429
-//	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
-//	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
-//	//...container access ....
-	tree BinfoVptrField(void);  // -- tree.h:2455
-	//
-	tree BinfoSubvttIndex(void);  // -- tree.h:2469
-	tree BinfoVptrIndex(void);    // -- tree.h:2473
-	tree BinfoInheritanceChain(void);  // -- tree.h:2479
-public: // Intuitive name for macro purpose
+	/* Nonzero means that the derivation chain is via a `virtual' declaration.  */
+	bool BinfoVirtualP();    // -- tree.h:2397 M_(381 tree_base)
 
+	/* Flags for language dependent use.  */
+	bool BinfoMarked();   // -- tree.h:2400==1379 M_(389 tree_base)
+	bool BinfoFlag1();    // -- tree.h:2401
+	bool BinfoFlag2();    // -- tree.h:2402
+	bool BinfoFlag3();    // -- tree.h:2403
+	bool BinfoFlag4();    // -- tree.h:2404
+	bool BinfoFlag5();    // -- tree.h:2405
+	bool BinfoFlag6();    // -- tree.h:2406
+
+	/* The actual data type node being inherited in this basetype.  */
+	tree BinfoType();     // -- tree.h:2409
+
+	/* The offset where this basetype appears in its containing type.
+	   BINFO_OFFSET slot holds the offset (in bytes)
+	   from the base of the complete object to the base of the part of the
+	   object that is allocated on behalf of this `type'.
+	   This is always 0 except when there is multiple inheritance.  */
+	tree BinfoOffset();    // -- tree.h:2417 M_2485
+	bool BinfoOffsetZerop(); // -- tree.h:2418 P_(4647 defined in [gcc-src]/gcc/tree.c:1708)
+
+	/* The virtual function table belonging to this basetype.  Virtual
+	   function tables provide a mechanism for run-time method dispatching.
+	   The entries of a virtual function table are language-dependent.  */
+	tree BinfoVtable();    // -- tree.h:2424 M_2486
+
+	/* The virtual functions in the virtual function table.  This is
+	   a TREE_LIST that is used as an initial approximation for building
+	   a virtual function table for this basetype.  */
+	tree BinfoVirtuals();  // -- tree.h:2429 M_2487
+
+public: // VEC access ....
+	//Ray: TODO This section is not complete, it needs heavily refector/refine!
+
+	/* A vector of binfos for the direct basetypes inherited by this
+	   basetype.
+
+	   If this basetype describes type D as inherited in C, and if the
+	   basetypes of D are E and F, then this vector contains binfos for
+	   inheritance of E and F by C.  */
+	Vec_ptr(tree,gc) BinfoBaseBinfos();  // -- tree.h:2437 M_2495
+
+	/* The number of basetypes for NODE.  */
+	unsigned BinfoNBaseBinfos(); // -- tree.h:2440==vec.h:150  P_2495
+
+	/* Accessor macro to get to the Nth base binfo of this binfo.  */
+	tree BinfoBaseBinfo(unsigned ix); // -- tree.h:(2443 P_2495) ==VEC_index vec.h:177.172
+
+	bool BinfoBaseIterate(unsigned ix, tree& ptr);  // -- tree.h:2445==vec.h:191.181  P_2495
+	tree* BinfoBaseAppend(tree obj); // -- tree.h:(2447 P_2495) == VEC_quick_push vec.h:310.302
+
+public:
+
+	/* For a BINFO record describing a virtual base class, i.e., one where
+	   TREE_VIA_VIRTUAL is set, this field assists in locating the virtual
+	   base.  The actual contents are language-dependent.  In the C++
+	   front-end this field is an INTEGER_CST giving an offset into the
+	   vtable where the offset to the virtual base can be found.  */
+	tree BinfoVptrField();  // -- tree.h:2455 M_2488
+
+public: // VEC access .... TODO: heavily refine
+	/* Indicates the accesses this binfo has to its bases. The values are
+	   access_public_node, access_protected_node or access_private_node.
+	   If this array is not present, public access is implied.  */
+	Vec_ptr(tree, gc) BinfoBaseAccesses(); // --tree.h:2460 M_2489
+	tree BinfoBaseAccess(unsigned ix); // -- tree.h:(2462 P_2489) == VEC_index
+	tree* BinfoBaseAccessAppend(tree obj); // -- tree.h:(2464 P_2489) == VEC_quick_push
+
+public:
+	/* The index in the VTT where this subobject's sub-VTT can be found.
+	   NULL_TREE if there is no sub-VTT.  */
+	tree BinfoSubvttIndex();  // -- tree.h:2469 M_2492
+
+	/* The index in the VTT where the vptr for this subobject can be
+	   found.  NULL_TREE if there is no secondary vptr in the VTT.  */
+	tree BinfoVptrIndex();    // -- tree.h:2473 M_2493
+
+	/* The BINFO_INHERITANCE_CHAIN points at the binfo for the base
+	   inheriting this base for non-virtual bases. For virtual bases it
+	   points either to the binfo for which this is a primary binfo, or to
+	   the binfo of the most derived type.  */
+	tree BinfoInheritanceChain();  // -- tree.h:2479
+public: // Intuitive name for macro purpose
+//	tree_type _TheActualDatatypeBeingInheriedInThisBasetype();
+	// container list BinfoVirtuals
 };
 
 // -- tree.h:2579
