@@ -457,6 +457,14 @@ public: // macro to member function map
 	Enum(br_predictor) PredictExprPredictor();   // -- tree.h:1136 P_??
 };
 
+//////////////////////////////////////////////////
+//Ray:
+// The file needs refine
+// 1. Reorganize the declaration order to match tree.def
+// 2. code style.
+// Here is temporary working stage.
+
+
 
 }// end namespace plugin_cxx
 

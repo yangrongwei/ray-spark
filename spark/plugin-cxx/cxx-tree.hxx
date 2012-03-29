@@ -813,6 +813,10 @@ public:
     /* Symtab field as a pointer to a DWARF DIE.  Used by DWARF generator
        in dwarf2out.c to point to the DIE generated for the type.  */
     struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2366.2365
+public:
+
+    /* Nonzero for a type which is at file scope.  */
+    bool TypeFileScopeP();  // -- tree.h:2731 P_2085
 
 public: // Intuitive name for macro purpose
     const char * _GetSymtabAsAString();
@@ -945,11 +949,41 @@ public: // Intuitive name for macro purpose
 class tree_decl_minimal : public tree_common
 {
 public: // Direct macro to member function map
+	tree DeclChain();  // -- tree.h:2528==862 M_(412 tree_common)
+
+	/* This is the name of the object as written by the user.
+	   It is an IDENTIFIER_NODE.  */
+	tree DeclName(); // -- tree.h:2532 M_2583
+
+	/* Every ..._DECL node gets a unique number.  */
+	unsigned int DeclUid(); // -- tree.h:2535 M_2582
+
+public:
+	/* These two fields describe where in the source code the declaration
+	   was.  If the declaration appears in several places (as for a C
+	   function that is declared first and then defined later), this
+	   information should refer to the definition.  */
+
 	// typedef source_location location_t;   -- [plug-inc]/input.h:58
 	// typedef unsigned int source_location; -- [plug-inc]/line-map.h:42
-	location_t DeclSourceLocation(void);  // -- tree.h:2558
-	/*virtual*/ tree DeclContext(void);               // -- tree.h:2572  2573 ?? to be virtual ??
-	bool DeclNameless(void);              // -- tree.h:2577
+	location_t DeclSourceLocation();  // -- tree.h:2558 M_2581
+	DeclSourceFile();  // -- tree.h:2560 P_2581
+	DeclSourceLine();  // -- tree.h:2561 P_2581
+	bool DeclIsBuiltin();  // -- tree.h:2562 P_2581
+
+public:
+	/*  For FIELD_DECLs, this is the RECORD_TYPE, UNION_TYPE, or
+	    QUAL_UNION_TYPE node that the field is a member of.  For VAR_DECL,
+	    PARM_DECL, FUNCTION_DECL, LABEL_DECL, RESULT_DECL, and CONST_DECL
+	    nodes, this points to either the FUNCTION_DECL for the containing
+	    function, the RECORD_TYPE or UNION_TYPE for the containing type, or
+	    NULL_TREE or a TRANSLATION_UNIT_DECL if the given decl has "file
+	    scope".  */
+	tree DeclContext();       // -- tree.h:2572 M_2584
+
+public:
+	/* If nonzero, decl's name shouldn't be emitted into debug info.  */
+	bool DeclNameless();      // -- tree.h:2577 M_(400 tree_base)
 
 public: // Intuitive name for macro purpose
 
@@ -964,6 +998,151 @@ class tree_decl_common : public tree_decl_minimal
 {
 public: // Direct macro to member function map
 
+	//Ray:
+	// Notice, macro define in tree.h:2544
+	// -1u    -- it's unsigned int
+	//
+	/* Every ..._DECL node gets a unique number that stays the same even
+	   when the decl is copied by the inliner once it is set.  */
+	unsigned int DeclPtUid();  // -- tree.h:2543 P_(2807, 2582 tree_decl_minimal)
+
+	/* Initialize the ..._DECL node pt-uid to the decls uid.  */
+	unsigned int SetDeclPtUid(unsigned int uid); // -- tree.h:2547 Ms_2807
+
+	/* Whether the ..._DECL node pt-uid has been initialized and thus needs to
+	   be preserved when copyin the decl.  */
+	bool DeclPtUidSetP();
+
+	/* For any sort of a ..._DECL node, this points to the original (abstract)
+	   decl node which this decl is an inlined/cloned instance of, or else it
+	   is NULL indicating that this decl is not an instance of some other decl.
+
+	   The C front-end also uses this in a nested declaration of an inline
+	   function, to point back to the definition.  */
+	tree DeclAbstractOrigin();  // -- tree.h:2594 M_2812
+
+	/* Like DECL_ABSTRACT_ORIGIN, but returns NODE if there's no abstract
+	   origin.  This is useful when setting the DECL_ABSTRACT_ORIGIN.  */
+	tree DeclOrigin();  // -- tree.h:2599 P_2812
+
+	/* Nonzero for any sort of ..._DECL node means this decl node represents an
+	   inline instance of some original (abstract) decl from an inline function;
+	   suppress any warnings about shadowing some other variable.  FUNCTION_DECL
+	   nodes can also have their abstract origin set to themselves.  */
+	bool DeclFromInline(); // -- tree.h:2606 P_(2594 2812)
+
+	/* In a DECL this is the field where attributes are stored.  */
+	tree DeclAttributes();  // -- tree.h:2611 M_2811
+public:
+
+	/* For a FUNCTION_DECL, holds the tree of BINDINGs.
+	   For a TRANSLATION_UNIT_DECL, holds the namespace's BLOCK.
+	   For a VAR_DECL, holds the initial value.
+	   For a PARM_DECL, used for DECL_ARG_TYPE--default
+	   values for parameters are encoded in the type of the function,
+	   not in the PARM_DECL slot.
+	   For a FIELD_DECL, this is used for enumeration values and the C
+	   frontend uses it for temporarily storing bitwidth of bitfields.
+
+	   ??? Need to figure out some way to check this isn't a PARM_DECL.  */
+	tree DeclInitial();  // -- tree.h:2624 M_2810
+
+public:
+
+	/* Holds the size of the datum, in bits, as a tree expression.
+	   Need not be constant.  */
+	tree DeclSize();  // -- tree.h:2628 M_2749
+
+	/* Likewise for the size in bytes.  */
+	tree DeclSizeUnit();  // -- tree.h:2630 M_2809
+
+	/* Holds the alignment required for the datum, in bits.  */
+	unsigned int DeclAlign(); // -- tree.h:2632 M_2804
+
+	/* The alignment of NODE, in bytes.  */
+	unsigned int DeclAlignUnit(); // -- tree.h:2634 P_(2632 2804)
+
+	/* Set if the alignment of this DECL has been set by the user, for
+	   example with an 'aligned' attribute.  */
+	bool DeclUserAlign();  // -- tree.h:2637 M_(399 tree_base)
+
+	/* Holds the machine mode corresponding to the declaration of a variable or
+	   field.  Always equal to TYPE_MODE (TREE_TYPE (decl)) except for a
+	   FIELD_DECL.  */
+	Bf_enum(8, machine_mode, unsigned) DeclMode(); // tree.h:2642 M_2751
+
+	bool DeclDebugExprIsFrom();  // -- tree.h:2650 M_2759
+
+	/* Nonzero for a given ..._DECL node means that the name of this node should
+	   be ignored for symbolic debug purposes.  For a TYPE_DECL, this means that
+	   the associated type should be ignored.  For a FUNCTION_DECL, the body of
+	   the function should also be ignored.  */
+	bool DeclIgnoredP(); // -- tree.h:2660 M_2755
+
+	/* Nonzero for a given ..._DECL node means that this node represents an
+	   "abstract instance" of the given declaration (e.g. in the original
+	   declaration of an inline function).  When generating symbolic debugging
+	   information, we mustn't try to generate any address information for nodes
+	   marked as "abstract instances" because we don't actually generate
+	   any code or allocate any data space for such instances.  */
+	bool DeclAbstract();  // -- tree.h:2669 M_2756
+
+	/* Language-specific decl information.  */
+	struct lang_decl * DeclLangSpecific(); // -- tree.h:2673 M_2815
+
+	/* In a VAR_DECL or FUNCTION_DECL, nonzero means external reference:
+	   do not allocate storage, and refer to a definition elsewhere.  Note that
+	   this does not necessarily imply the entity represented by NODE
+	   has no program source-level definition in this translation unit.  For
+	   example, for a FUNCTION_DECL, DECL_SAVED_TREE may be non-NULL and
+	   DECL_EXTERNAL may be true simultaneously; that can be the case for
+	   a C99 "extern inline" function.  */
+	bool DeclExternal();  // -- tree.h:2683 M_2777
+
+	/* Nonzero in a ..._DECL means this variable is ref'd from a nested function.
+	   For VAR_DECL nodes, PARM_DECL nodes, and FUNCTION_DECL nodes.
+
+	   For LABEL_DECL nodes, nonzero if nonlocal gotos to the label are permitted.
+
+	   Also set in some languages for variables, etc., outside the normal
+	   lexical scope, such as class instance variables.  */
+	bool DeclNonlocal();  // -- tree.h:2692 M_2753
+
+	/* Used in VAR_DECLs to indicate that the variable is a vtable.
+	   Used in FIELD_DECLs for vtable pointers.
+	   Used in FUNCTION_DECLs to indicate that the function is virtual.  */
+	bool DeclVirtualP();  // -- tree.h:2698 M_2754
+
+	/* Used to indicate that this DECL represents a compiler-generated entity.  */
+	bool DeclArtificial(); // -- tree.h:2702 M_2757
+
+	/* Additional flags for language-specific uses.  */
+	bool DeclLangFlag0();  // -- tree.h:2706 M_2761
+	bool DeclLangFlag1();  // -- tree.h:2708 M_2762
+	bool DeclLangFlag2();  // -- tree.h:2710 M_2763
+	bool DeclLangFlag3();  // -- tree.h:2712 M_2764
+	bool DeclLangFlag4();  // -- tree.h:2714 M_2765
+	bool DeclLangFlag5();  // -- tree.h:2716 M_2766
+	bool DeclLangFlag6();  // -- tree.h:2718 M_2767
+	bool DeclLangFlag7();  // -- tree.h:2720 M_2768
+	bool DeclLangFlag8();  // -- tree.h:2722 M_2769
+
+	/* Nonzero for a decl which is at file scope.  */
+	bool DeclFileScopeP(); // -- tree.h:2729 P_(2572 tree_decl_minimal)
+
+	/* Nonzero for a decl that is decorated using attribute used.
+	   This indicates to compiler tools that this decl needs to be preserved.  */
+	bool DeclPreserveP();  // -- tree.h:2735 M_2758
+
+	/* For function local variables of COMPLEX and VECTOR types,
+	   indicates that the variable is not aliased, and that all
+	   modifications to the variable have been adjusted so that
+	   they are killing assignments.  Thus the variable may now
+	   be treated as a GIMPLE register, and use real instead of
+	   virtual ops in SSA form.  */
+	bool DeclGimpleRegP();  // -- tree.h:2744 M_2784
+public:
+
 public: // Intuitive name for macro purpose
 
 };
@@ -976,7 +1155,14 @@ public: // Intuitive name for macro purpose
 class tree_decl_with_rtl : public tree_decl_common
 {
 public: // Direct macro to member function map
+	tree DeclValueExpr();  // -- tree.h:2828 P_2818
+	void SetDeclValueExpr(tree val); // -- tree.h:2830 P_2819
 
+	/* Holds the RTL expression for the value of a variable or function.
+	   This value can be evaluated lazily for functions, variables with
+	   static storage duration, and labels.  */
+	rtx DeclRtl();  // -- tree.h:2836 M_2865
+	SetDeclRtl(rtx v); // -- tree.h:2842 P_
 public: // Intuitive name for macro purpose
 
 };
@@ -1124,6 +1310,15 @@ class tree_function_decl : public tree_decl_non_common
 {
 public: // macro to member function map
 
+	/* For FUNCTION_DECL, if it is built-in, this identifies which built-in
+	   operation it is.  Note, however, that this field is overloaded, with
+	   DECL_BUILT_IN_CLASS as the discriminant, so the latter must always be
+	   checked before any access to the former.  */
+	//Ray: the latter == decl_common.DECL_DEBUG_EXPR_IS_FROM()
+	Bf_enum(11, built_in_function, int) DeclFunctionCode();  // tree.h:2648 M_3385
+
+	/* The personality function. Used for stack unwinding. */
+	tree DeclFunctionPersonality();  // tree.h:2653 M_3375
 };
 
 // -- tree.h:3417
