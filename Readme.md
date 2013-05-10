@@ -1,6 +1,10 @@
-Introduction of Spark -- C++ plugin wrapper for GCC (focus on GENERIC)
+Spark -- GCC Plugin Interface C++ Wrapper (focus on GENERIC)
 
-Project **spark** is a student project for studying gcc plugin. The purpose of **spark** is trying to put a thin C++ class/object wrapper for gcc GENERIC intermediate representation. If it works, it will be very natural for contemporary programmers to manipulate GENERIC **tree** class/object hierarchy in C++, not the strange gcc object-in-C way, which is macro call. 
+Introduction
+
+Project **spark** is a student project for studying gcc plugin. The purpose of **spark** is trying to put a thin C++ class/object wrapper for gcc GENERIC intermediate representation. As well as archive sample code.
+
+If it works, it will be very natural for contemporary programmers to manipulate GENERIC **tree** class/object hierarchy in C++ with IDE help.  Left the strange GCC's object-in-C macro access way. 
 
 The working version is based-on GCC 4.6.1. Future version will be switched to GCC 4.7 when it (spark or gcc) is stable. The project is initialized in early March 2012. Since it is a student project, there is no clear plan for its path. Roughly, we should have a working release with demo/test code in May 2012. The code name _spark_ is chosen because I like the word. 
 
