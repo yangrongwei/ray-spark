@@ -4316,7 +4316,7 @@ struct GTY(()) tree_decl_minimal {
   (DECL_COMMON_CHECK (NODE)->decl_common.lang_flag_8)
 
 /* Nonzero for a scope which is equal to file scope.  */
-#define SCOPE_FILE_SCOPE_P(EXP)	\
+/*Ray: helper, no map*/#define SCOPE_FILE_SCOPE_P(EXP)	\
   (! (EXP) || TREE_CODE (EXP) == TRANSLATION_UNIT_DECL)
 /* Nonzero for a decl which is at file scope.  */
 #define DECL_FILE_SCOPE_P(EXP) SCOPE_FILE_SCOPE_P (DECL_CONTEXT (EXP))

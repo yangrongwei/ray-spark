@@ -75,19 +75,16 @@
 //     Cost? Negligible comparing with benefits.
 //
 // Macro purpose marker list:
-//  M_      type specific Member variable getter macro
-//  Ms_     type specific Member variable Setter macro
-//  P_      like property (value is caculated on-the-foly) accessor
+//  M_      (type specific) Member variable getter macro
+//  Ms_     (type specific) Member variable Setter macro
+//  P_      Property (value is caculated on-the-foly) getter
+//  Ps_     Property Setter
 //
 //  Pc_   == C_ ??
 //  C_      aggregation (container) helper ?? accessor ??
 //          // Why not Container ?  Easy to confusing with class,
 //          // Somewhat borrowed from UML
 //
-//  Forward reference, M_ marks it's a type specific member getter
-// to mark memeber access ?? (with attribute to verify our code ?? where to put ? I like leading...)
-#define M_          // type specific member getter
-#define Ms_         // type specific member setter
 
 // Abbriviation list (sadly, used in intuitive name)
 //   I want to use full name whenever possible in my coined intuitive name.
@@ -109,15 +106,20 @@
 
 // to mark bit-field ??  n1548-c-standard-sec-6.7.2.1-para-9
 // 1 bit wide flag bit-field is mapped directly to C++ bool type, type safe purpse...
-#define Bf(width)         //bit-field, use less bits in corresponding integer type
-#define Bf_enum(width, enum_name)
+#define Bf(width, type)   type      //bit-field, use less bits in corresponding integer type
+#define Bf_enum(width, enum_name, int_name) int_name
+
 	// TODO:
 	// We need a strong-typed enum, not gcc's C enum in this header file, of course C++11's enum class
 	// This means we MUST copy the enum from gcc code, dirty, but it will give us type safe benefit..
 //	/*virtual */ M_ enum class machine_mode TypeMode(void);
+
 #define Enum(enum_name)  int  //avoid include enum definition
 //#define Enum(enum_name)  enum enum_name
 //#define Enum(enum_name)  enum class enum_name
+
+// For VEC(T, A) * -- vec.h:509
+#define Vec_ptr(elemet_type, vec_alloc_strategy) void *
 
 #define c_virtual   // virtual candidate for C++
 
@@ -136,7 +138,6 @@ namespace plugin_cxx
 //Ray:
 // A helper class to manipulate 'enum tree_code'
 //
-<<<<<<< HEAD
 // object-in-c type system support helper
 //
 // Generic type classifying service
@@ -207,22 +208,6 @@ public:
 	// It seems we do not need mapping xxx_CHECK macros here
 	// They will be used in corresponding class constructor, looks like.
 
-=======
-// -- tree.h:42
-//enum tree_code {
-//#include "all-tree.def"
-//MAX_TREE_CODES
-//};
-class _tree_code_helper
-{
-	// refer to tree.h:368 code is 16-bits limited
-	Bf(16) const int m_code; //Discard 'enum tree_code' type info intentionally in header
-public:
-	explicit _tree_code_helper(int code):m_code(code){}
-public:
-	//Ray:...reuse macros? wrap a temp tree_base variable?
-	bool IntegralTypeP();         // -- tree.h:1021 P_368
->>>>>>> refs/remotes/origin/master
 };
 
 // -- tree.h:347
@@ -271,10 +256,7 @@ public:
 //   +-tree_vec                     -- tree.h:1508
 //   +-tree_constructor             -- tree.h:1567     "constructor"--64
 //   +-tree_exp                     -- tree.h:1857     "exp"--59
-<<<<<<< HEAD
 //     +-//lots subclass defined in tree.def with _EXPR postfix
-=======
->>>>>>> refs/remotes/origin/master
 //   +-tree_ssa_name                -- tree.h:1923     "ssa name"--60
 //   +-tree_omp_clause              -- tree.h:1963     "omp clause"--65
 //   +-tree_block                   -- tree.h:2034
@@ -321,8 +303,8 @@ public: // Direct macro to member function map
   // Type safe is not very useful here, we should use them rarely. Just int, simple.
 	//Ray: We should use following two memeber functions ONLY for communicating with
 	//     legacy gcc-object-in-c system. Not in our own C++ class hierachy system.
-	unsigned int Bf(16) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
-	unsigned int Bf(16) TreeSetCode(unsigned int);  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
+	Bf_enum(16, tree_code, unsigned int) TreeCode() const;           // -- tree.h:656, M_368  //To more generic type, right?
+	Bf_enum(16, tree_code, unsigned int) TreeSetCode( Bf_enum(16, tree_code, unsigned int) );  // -- tree.h:657, Ms_368 //Ray: good or bad? enum can be auto converted
 	size_t TreeHash() const;                        // -- tree.h:974, P_ based-on m_node value
 
 	// skip from 977, later check it
@@ -335,33 +317,12 @@ public: // Direct macro to member function map
 //	tree StripUselessTypeConversion(tree);  // -- tree.h:1014
 
 public: // prediate mapping -- macro --> member function
-<<<<<<< HEAD
 	// to void bloat this class
 	// xxx_P are delegate to _tree_code_helper
 	//
 public: // xxx_CHECK macros
 	// delegate to _tree_code_helper too?
 	// or not appear in class interface at all?
-=======
-
-	//Ray: 
-	// This work is better to delegate to _tree_code_helper
-	// But the macros use TREE_CODE() .... which requires a tree_base
-	// So they are here...
-	// Generic type classifying service
-	bool IntegralTypeP();         // -- tree.h:1021 P_368
-	bool NonSatFixedPointTypeP(); // -- tree.h:1028 P_(368, 386)
-	bool SatFixedPointTypeP();    // -- tree.h:1033 P_(368, 386)
-	bool FixedPointTypeP();       // -- tree.h:1038 P_368
-	bool ScalarFloatTypeP();      // -- tree.h:1042 P_368
-    //...till 1102
-//	// -- plugin/include/tree.h:1021
-//	//...
-//	// -- plugin/include/tree.h:1091
-//	bool CompleteTypeP();
-//	// -- plugin/include/tree.h:1094
-//	bool VoidTypeP();
->>>>>>> refs/remotes/origin/master
 
 
 public: // flag-mapping  -- Direct macro to member function map // member access
@@ -390,8 +351,20 @@ public:
 	//...
 	bool TreeSideEffects(); // -- tree.h:1228
 
-	//...
-	bool TreeLangFlag0(); // -- tree.h:1379
+	/* These flags are available for each language front end to use internally.  */
+	bool TreeLangFlag0(); // -- tree.h:1379 M_389
+	bool TreeLangFlag1(); // -- tree.h:1380 M_390
+	bool TreeLangFlag2(); // -- tree.h:1381 M_391
+	bool TreeLangFlag3(); // -- tree.h:1382 M_392
+	bool TreeLangFlag4(); // -- tree.h:1383 M_393
+	bool TreeLangFlag5(); // -- tree.h:1384 M_394
+	bool TreeLangFlag6(); // -- tree.h:1385 M_395
+
+
+	/* Used to keep track of visited nodes in tree traversals.  This is set to
+	   0 by copy_node and make_node.  */
+	bool TreeVisited(); // -- tree.h:2248 M_397
+
 public: // Direct macro to member function map
 
 
@@ -533,7 +506,7 @@ public: // Intuitive name for macro purpose
 /*
  * gccint-sec-11.2.1 Identifiers
 An IDENTIFIER_NODE represents a slightly more general concept that the standard C or
-C++ concept of identifier. In particular, anIDENTIFIER_NODEmay contain a ?$?, or other
+C++ concept of identifier. In particular, anIDENTIFIER_NODEmay contain a ‘$’, or other
 extraordinary characters.
 There are never two distinct IDENTIFIER_NODEs representing the same identifier. There-
 fore, you may use pointer equality to compare IDENTIFIER_NODEs, rather than using a
@@ -716,7 +689,7 @@ public: // Direct macro to member function map
   tree BlockSupercontext(void);          // -- tree.h:1991, M_2046
   tree BlockAbstractOrigin(void);        // -- tree.h:1995, M_2047
   bool BlockAbstract(void);              // -- tree.h:1996, M_2037
-  Bf(31) unsigned BlockNumber(void);     // -- tree.h:2001, M_2038
+  Bf(31, unsigned) BlockNumber(void);     // -- tree.h:2001, M_2038
   tree BlockFragmentOrigin(void);        // -- tree.h:2025, M_2048
   tree BlockFragmentChain(void);         // -- tree.h:2026, M_2049
   location_t BlockSourceLocation(void);  // -- tree.h:2032, M_2040
@@ -734,64 +707,116 @@ public: // Intuitive name for macro purpose
 //  //...
 class tree_type : public tree_common
 {
-public: // Direct macro to member function map
-<<<<<<< HEAD
-	unsigned int TypeUid();   // -- tree.h:2063 M_2338
+public:
 	unsigned int TypeHash();  // -- tree.h:970==2063 P_2338
-	
-	tree TypeSize();          // -- tree.h:2064, M_2335
-	tree TypeSizeUnit();      // -- tree.h:2065, M_2336
-=======
-	unsigned int TypeUid(void);  // -- tree.h:2063 M_2338
-	unsigned int TypeHash();     // -- tree.h:970==2063 P_2338
-	
-	M_ tree TypeSize(void);         // -- tree.h:2064
-	M_ tree TypeSizeUnit(void);     // -- tree.h:2065
->>>>>>> refs/remotes/origin/master
-	/*virtual*/ tree TypeValues(void);       // -- tree.h:2066 - 2069  be virtual ?
-	// various virtual candidate ??
-	// .minval .maxval should be virtual ....
-	//
-	M_ tree TypePointerTo(void);    // -- tree.h:2075
-	M_ tree TypeReferenceTo(void);  // -- tree.h:2076
-	M_ Bf(10) unsigned int TypePrecision(void);  // -- tree.h:2340
-	M_ tree TypeName(void);         // -- tree.h:2082
-	M_ tree TypeNextVariant(void);  // -- tree.h:2083
-	M_ tree TypeMainVariant(void);  // -- tree.h:2084
-	M_ tree TypeContext(void);      // -- tree.h:2085
-	M_ tree TypeMaxval(void);       // -- tree.h:2086, M_2369
-	M_ tree TypeMinval(void);       // -- tree.h:2087, M_2368
-
-	Bf_enum(8, machine_mode) unsigned TypeMode();  // -- tree.h:2091 , M_2347
-    Bf_enum(8, machine_mode) unsigned SetTypeMode(unsigned); // -- tree.h:2094  , Ms_2347
-
-	tree TypeCanonical();    // -- tree.h:2113, M_2374
+public: // Direct macro to member function map
+	unsigned int TypeUid();      // -- tree.h:2063 M_2338
+	tree TypeSize();             // -- tree.h:2064 M_2335
+	tree TypeSizeUnit();         // -- tree.h:2065 M_2336
+	tree TypeCachedValues();     // -- tree.h:2066 M_2334
+	tree TypePointerTo();        // -- tree.h:2075 M_2360
+	tree TypeReferenceTo();      // -- tree.h:2076 M_2361
+	Bf(10, unsigned int) TypePrecision(); // -- tree.h:2340 M_2340
+	tree TypeName();         // -- tree.h:2082 M_2367
+	tree TypeNextVariant();  // -- tree.h:2083 M_2370
+	tree TypeMainVariant();  // -- tree.h:2084 M_2371
+	tree TypeContext();      // -- tree.h:2085 M_2373
+	tree TypeMaxval();       // -- tree.h:2086 M_2369
+	tree TypeMinval();       // -- tree.h:2087 M_2368
+	Bf_enum(8, machine_mode, unsigned) TypeMode();  // -- tree.h:2091 , M_2347
+    Bf_enum(8, machine_mode, unsigned) SetTypeMode( Bf_enum(8, machine_mode, unsigned) ); // -- tree.h:2094  , Ms_2347
+	tree TypeCanonical();        // -- tree.h:2113, M_2374
+	bool TypeStructuralEqualityP();   // -- tree.h:2120 P_(2113, 2374)
+	bool SetTypeStructuralEquality(); // -- tree.h:2123 Ps_(2113, 2374)
 	struct lang_type * TypeLangSpecific();  // -- tree.h:2125, M_2376
-	tree TypeAttributes();   // -- tree.h:2149, M_2337
-	unsigned int TypeAlign();// -- tree.h:2153, M_2358
-//	/*virtual ??*/ M_ bool TypeNoForceBlk(void);   // -- tree.h:2174, M_2341
-	bool TypeRestrict();     // -- tree.h:2195, M_2344
 
-	// various semantics, ?? how to handle ??
-	// define semantic specific memeber function in subclass?
-	// Hide this member function in this class ?? Too arbitrary ??
-	// M_ bool TypeStringFlag(void);   // -- tree.h:2253, M_2349
 
+	alias_set_type TypeAliasSet();    // -- tree.h:2141 M_2359
+	bool TypeAliasSetKnownP();   // -- tree.h:2145 P_2359
+	tree TypeAttributes();    // -- tree.h:2149, M_2337
+	unsigned int TypeAlign(); // -- tree.h:2153, M_2358
+	bool TypeUserAlign();     // -- tree.h:2157 M_(399 tree_base)
+	int TypeAlignUnit();      // -- tree.h:2160 P_(2153, defaults.h:423)
+
+	// -- tree.h:2162
+	/* If your language allows you to declare types, and you want debug info
+	   for them, then you need to generate corresponding TYPE_DECL nodes.
+	   These "stub" TYPE_DECL nodes have no name, and simply point at the
+	   type node.  You then set the TYPE_STUB_DECL field of the type node
+	   to point back at the TYPE_DECL node.  This allows the debug routines
+	   to know that the two nodes represent the same type, so that we only
+	   get one debug info record for them.  */
+	tree TypeStubDecl();  // -- tree.h:2169 P_(862, 412 tree_common.chain)
+
+	// -- tree.h:2171
+	/* In a RECORD_TYPE, UNION_TYPE or QUAL_UNION_TYPE, it means the type
+	   has BLKmode only because it lacks the alignment requirement for
+	   its size.  */
+	bool TypeNoForceBlk();   // -- tree.h:2174, M_2341
+
+	/* Nonzero in a type considered volatile as a whole.  */
+	bool TypeVolatile();   // -- tree.h:2188 M_(373 tree_base)
+
+	/* Means this type is const-qualified.  */
+	bool TypeReadonly();   // -- tree.h:2101 M_(374 tree_base)
+
+	/* If nonzero, this type is `restrict'-qualified, in the C sense of
+	   the term.  */
+	bool TypeRestrict();     // -- tree.h:2195 M_(2344 tree_type)
+
+	/* If nonzero, type's name shouldn't be emitted into debug info.  */
+	bool TypeNameless();  // -- tree.h:2198 M_(400 tree_base)
+
+	/* The address space the type is in.  */
+	Bf(8, unsigned) TypeAddrSpace(); // -- tree.h:2201 M_(407 tree_base)
+
+	//Ray: They are different from TREE_LANG_FLAG_xxx (tree_base)
+	/* These flags are available for each language front end to use internally.  */
 	bool TypeLangFlag0();    // -- tree.h:2238, M_2350
-	bool TypeLangFlag1();    // -- tree.h:2238, M_2351
-	bool TypeLangFlag2();    // -- tree.h:2238, M_2352
-	bool TypeLangFlag3();    // -- tree.h:2238, M_2353
-	bool TypeLangFlag4();    // -- tree.h:2238, M_2354
-	bool TypeLangFlag5();    // -- tree.h:2238, M_2355
-	bool TypeLangFlag6();    // -- tree.h:2238, M_2356
+	bool TypeLangFlag1();    // -- tree.h:2239, M_2351
+	bool TypeLangFlag2();    // -- tree.h:2240, M_2352
+	bool TypeLangFlag4();    // -- tree.h:2241, M_2354
+	bool TypeLangFlag5();    // -- tree.h:2242, M_2355
+	bool TypeLangFlag3();    // -- tree.h:2243, M_2353
+	bool TypeLangFlag6();    // -- tree.h:2244, M_2356
 
+
+	/* If set in an ARRAY_TYPE, indicates a string type (for languages
+	   that distinguish string from array of char).
+	   If set in a INTEGER_TYPE, indicates a character type.  */
+	bool TypeStringFlag();   // -- tree.h:2253, M_2349
+
+	/* Indicates that objects of this type must be initialized by calling a
+	   function when they are created.  */
 	bool TypeNeedsConstructing(); // -- tree.h:2277, M_2342
-    Bf(2) unsigned TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
 
-    // Following three are defined within a union, mark it??
-    int TypeSymtabAddress();             // -- tree.h:2312, M_2363
-    const char * TypeSymtabPointer();    // -- tree.h:2316, M_2364
-    struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2365
+	/* Indicated that objects of this type should be laid out in as
+	   compact a way as possible.  */
+	bool TypePacked(); // -- tree.h:2295 M_(398 tree_base)
+
+private: //???
+	/* Used by type_contains_placeholder_p to avoid recomputation.
+	   Values are: 0 (unknown), 1 (false), 2 (true).  Never access
+	   this field directly.  */
+    Bf(2, unsigned) TypeContainsPlaceholderInternal(); // -- tree.h:2300, M_2345
+public:
+
+    // Following three are defined within one union with different type
+    /* Symtab field as an integer.  Used by stabs generator in dbxout.c to
+       hold the type's number in the generated stabs.  */
+    int TypeSymtabAddress();             // -- tree.h:2312, M_2366.2363
+
+    /* Symtab field as a string.  Used by COFF generator in sdbout.c to
+       hold struct/union type tag names.  */
+    const char * TypeSymtabPointer();    // -- tree.h:2316, M_2366.2364
+
+    /* Symtab field as a pointer to a DWARF DIE.  Used by DWARF generator
+       in dwarf2out.c to point to the DIE generated for the type.  */
+    struct die_struct * TypeSymtabDie(); // -- tree.h:2320, M_2366.2365
+public:
+
+    /* Nonzero for a type which is at file scope.  */
+    bool TypeFileScopeP();  // -- tree.h:2731 P_2085
 
 public: // Intuitive name for macro purpose
     const char * _GetSymtabAsAString();
@@ -800,7 +825,21 @@ public: // Intuitive name for macro purpose
 };
 
 
+// -- tree.h:2379
+/* Define accessor macros for information about type inheritance
+   and basetypes.
 
+   A "basetype" means a particular usage of a data type for inheritance
+   in another type.  Each such basetype usage has its own "binfo"
+   object to describe it.  The binfo object is a TREE_VEC node.
+
+   Inheritance is represented by the binfo nodes allocated for a
+   given type.  For example, given types C and D, such that D is
+   inherited by C, 3 binfo nodes will be allocated: one for describing
+   the binfo properties of C, similarly one for D, and one for
+   describing the binfo properties of D as a base type for C.
+   Thus, given a pointer to class C, one can get a pointer to the binfo
+   of D acting as a basetype for C by looking at C's binfo's basetypes.  */
 // -- tree.h:2482
 //struct GTY (()) tree_binfo {
 //  struct tree_common common;
@@ -810,19 +849,93 @@ public: // Intuitive name for macro purpose
 class tree_binfo : public tree_common
 {
 public: // Direct macro to member function map
-	tree BinfoOffset(void);    // -- tree.h:2417
-	tree BinfoVtable(void);    // -- tree.h:2424
-	tree BinfoVirtuals(void);  // -- tree.h:2429
-//	/*VEC*/ BinfoBaseBinfos(void);  // -- tree.h:2437
-//	/*VEC_length*/ BinfoNBaseBinfos(void); // -- tree.h:2440
-//	//...container access ....
-	tree BinfoVptrField(void);  // -- tree.h:2455
-	//
-	tree BinfoSubvttIndex(void);  // -- tree.h:2469
-	tree BinfoVptrIndex(void);    // -- tree.h:2473
-	tree BinfoInheritanceChain(void);  // -- tree.h:2479
-public: // Intuitive name for macro purpose
+	/* Nonzero means that the derivation chain is via a `virtual' declaration.  */
+	bool BinfoVirtualP();    // -- tree.h:2397 M_(381 tree_base)
 
+	/* Flags for language dependent use.  */
+	bool BinfoMarked();   // -- tree.h:2400==1379 M_(389 tree_base)
+	bool BinfoFlag1();    // -- tree.h:2401
+	bool BinfoFlag2();    // -- tree.h:2402
+	bool BinfoFlag3();    // -- tree.h:2403
+	bool BinfoFlag4();    // -- tree.h:2404
+	bool BinfoFlag5();    // -- tree.h:2405
+	bool BinfoFlag6();    // -- tree.h:2406
+
+	/* The actual data type node being inherited in this basetype.  */
+	tree BinfoType();     // -- tree.h:2409
+
+	/* The offset where this basetype appears in its containing type.
+	   BINFO_OFFSET slot holds the offset (in bytes)
+	   from the base of the complete object to the base of the part of the
+	   object that is allocated on behalf of this `type'.
+	   This is always 0 except when there is multiple inheritance.  */
+	tree BinfoOffset();    // -- tree.h:2417 M_2485
+	bool BinfoOffsetZerop(); // -- tree.h:2418 P_(4647 defined in [gcc-src]/gcc/tree.c:1708)
+
+	/* The virtual function table belonging to this basetype.  Virtual
+	   function tables provide a mechanism for run-time method dispatching.
+	   The entries of a virtual function table are language-dependent.  */
+	tree BinfoVtable();    // -- tree.h:2424 M_2486
+
+	/* The virtual functions in the virtual function table.  This is
+	   a TREE_LIST that is used as an initial approximation for building
+	   a virtual function table for this basetype.  */
+	tree BinfoVirtuals();  // -- tree.h:2429 M_2487
+
+public: // VEC access ....
+	//Ray: TODO This section is not complete, it needs heavily refector/refine!
+
+	/* A vector of binfos for the direct basetypes inherited by this
+	   basetype.
+
+	   If this basetype describes type D as inherited in C, and if the
+	   basetypes of D are E and F, then this vector contains binfos for
+	   inheritance of E and F by C.  */
+	Vec_ptr(tree,gc) BinfoBaseBinfos();  // -- tree.h:2437 M_2495
+
+	/* The number of basetypes for NODE.  */
+	unsigned BinfoNBaseBinfos(); // -- tree.h:2440==vec.h:150  P_2495
+
+	/* Accessor macro to get to the Nth base binfo of this binfo.  */
+	tree BinfoBaseBinfo(unsigned ix); // -- tree.h:(2443 P_2495) ==VEC_index vec.h:177.172
+
+	bool BinfoBaseIterate(unsigned ix, tree& ptr);  // -- tree.h:2445==vec.h:191.181  P_2495
+	tree* BinfoBaseAppend(tree obj); // -- tree.h:(2447 P_2495) == VEC_quick_push vec.h:310.302
+
+public:
+
+	/* For a BINFO record describing a virtual base class, i.e., one where
+	   TREE_VIA_VIRTUAL is set, this field assists in locating the virtual
+	   base.  The actual contents are language-dependent.  In the C++
+	   front-end this field is an INTEGER_CST giving an offset into the
+	   vtable where the offset to the virtual base can be found.  */
+	tree BinfoVptrField();  // -- tree.h:2455 M_2488
+
+public: // VEC access .... TODO: heavily refine
+	/* Indicates the accesses this binfo has to its bases. The values are
+	   access_public_node, access_protected_node or access_private_node.
+	   If this array is not present, public access is implied.  */
+	Vec_ptr(tree, gc) BinfoBaseAccesses(); // --tree.h:2460 M_2489
+	tree BinfoBaseAccess(unsigned ix); // -- tree.h:(2462 P_2489) == VEC_index
+	tree* BinfoBaseAccessAppend(tree obj); // -- tree.h:(2464 P_2489) == VEC_quick_push
+
+public:
+	/* The index in the VTT where this subobject's sub-VTT can be found.
+	   NULL_TREE if there is no sub-VTT.  */
+	tree BinfoSubvttIndex();  // -- tree.h:2469 M_2492
+
+	/* The index in the VTT where the vptr for this subobject can be
+	   found.  NULL_TREE if there is no secondary vptr in the VTT.  */
+	tree BinfoVptrIndex();    // -- tree.h:2473 M_2493
+
+	/* The BINFO_INHERITANCE_CHAIN points at the binfo for the base
+	   inheriting this base for non-virtual bases. For virtual bases it
+	   points either to the binfo for which this is a primary binfo, or to
+	   the binfo of the most derived type.  */
+	tree BinfoInheritanceChain();  // -- tree.h:2479
+public: // Intuitive name for macro purpose
+//	tree_type _TheActualDatatypeBeingInheriedInThisBasetype();
+	// container list BinfoVirtuals
 };
 
 // -- tree.h:2579
@@ -836,11 +949,41 @@ public: // Intuitive name for macro purpose
 class tree_decl_minimal : public tree_common
 {
 public: // Direct macro to member function map
+	tree DeclChain();  // -- tree.h:2528==862 M_(412 tree_common)
+
+	/* This is the name of the object as written by the user.
+	   It is an IDENTIFIER_NODE.  */
+	tree DeclName(); // -- tree.h:2532 M_2583
+
+	/* Every ..._DECL node gets a unique number.  */
+	unsigned int DeclUid(); // -- tree.h:2535 M_2582
+
+public:
+	/* These two fields describe where in the source code the declaration
+	   was.  If the declaration appears in several places (as for a C
+	   function that is declared first and then defined later), this
+	   information should refer to the definition.  */
+
 	// typedef source_location location_t;   -- [plug-inc]/input.h:58
 	// typedef unsigned int source_location; -- [plug-inc]/line-map.h:42
-	location_t DeclSourceLocation(void);  // -- tree.h:2558
-	/*virtual*/ tree DeclContext(void);               // -- tree.h:2572  2573 ?? to be virtual ??
-	bool DeclNameless(void);              // -- tree.h:2577
+	location_t DeclSourceLocation();  // -- tree.h:2558 M_2581
+	DeclSourceFile();  // -- tree.h:2560 P_2581
+	DeclSourceLine();  // -- tree.h:2561 P_2581
+	bool DeclIsBuiltin();  // -- tree.h:2562 P_2581
+
+public:
+	/*  For FIELD_DECLs, this is the RECORD_TYPE, UNION_TYPE, or
+	    QUAL_UNION_TYPE node that the field is a member of.  For VAR_DECL,
+	    PARM_DECL, FUNCTION_DECL, LABEL_DECL, RESULT_DECL, and CONST_DECL
+	    nodes, this points to either the FUNCTION_DECL for the containing
+	    function, the RECORD_TYPE or UNION_TYPE for the containing type, or
+	    NULL_TREE or a TRANSLATION_UNIT_DECL if the given decl has "file
+	    scope".  */
+	tree DeclContext();       // -- tree.h:2572 M_2584
+
+public:
+	/* If nonzero, decl's name shouldn't be emitted into debug info.  */
+	bool DeclNameless();      // -- tree.h:2577 M_(400 tree_base)
 
 public: // Intuitive name for macro purpose
 
@@ -855,6 +998,151 @@ class tree_decl_common : public tree_decl_minimal
 {
 public: // Direct macro to member function map
 
+	//Ray:
+	// Notice, macro define in tree.h:2544
+	// -1u    -- it's unsigned int
+	//
+	/* Every ..._DECL node gets a unique number that stays the same even
+	   when the decl is copied by the inliner once it is set.  */
+	unsigned int DeclPtUid();  // -- tree.h:2543 P_(2807, 2582 tree_decl_minimal)
+
+	/* Initialize the ..._DECL node pt-uid to the decls uid.  */
+	unsigned int SetDeclPtUid(unsigned int uid); // -- tree.h:2547 Ms_2807
+
+	/* Whether the ..._DECL node pt-uid has been initialized and thus needs to
+	   be preserved when copyin the decl.  */
+	bool DeclPtUidSetP();
+
+	/* For any sort of a ..._DECL node, this points to the original (abstract)
+	   decl node which this decl is an inlined/cloned instance of, or else it
+	   is NULL indicating that this decl is not an instance of some other decl.
+
+	   The C front-end also uses this in a nested declaration of an inline
+	   function, to point back to the definition.  */
+	tree DeclAbstractOrigin();  // -- tree.h:2594 M_2812
+
+	/* Like DECL_ABSTRACT_ORIGIN, but returns NODE if there's no abstract
+	   origin.  This is useful when setting the DECL_ABSTRACT_ORIGIN.  */
+	tree DeclOrigin();  // -- tree.h:2599 P_2812
+
+	/* Nonzero for any sort of ..._DECL node means this decl node represents an
+	   inline instance of some original (abstract) decl from an inline function;
+	   suppress any warnings about shadowing some other variable.  FUNCTION_DECL
+	   nodes can also have their abstract origin set to themselves.  */
+	bool DeclFromInline(); // -- tree.h:2606 P_(2594 2812)
+
+	/* In a DECL this is the field where attributes are stored.  */
+	tree DeclAttributes();  // -- tree.h:2611 M_2811
+public:
+
+	/* For a FUNCTION_DECL, holds the tree of BINDINGs.
+	   For a TRANSLATION_UNIT_DECL, holds the namespace's BLOCK.
+	   For a VAR_DECL, holds the initial value.
+	   For a PARM_DECL, used for DECL_ARG_TYPE--default
+	   values for parameters are encoded in the type of the function,
+	   not in the PARM_DECL slot.
+	   For a FIELD_DECL, this is used for enumeration values and the C
+	   frontend uses it for temporarily storing bitwidth of bitfields.
+
+	   ??? Need to figure out some way to check this isn't a PARM_DECL.  */
+	tree DeclInitial();  // -- tree.h:2624 M_2810
+
+public:
+
+	/* Holds the size of the datum, in bits, as a tree expression.
+	   Need not be constant.  */
+	tree DeclSize();  // -- tree.h:2628 M_2749
+
+	/* Likewise for the size in bytes.  */
+	tree DeclSizeUnit();  // -- tree.h:2630 M_2809
+
+	/* Holds the alignment required for the datum, in bits.  */
+	unsigned int DeclAlign(); // -- tree.h:2632 M_2804
+
+	/* The alignment of NODE, in bytes.  */
+	unsigned int DeclAlignUnit(); // -- tree.h:2634 P_(2632 2804)
+
+	/* Set if the alignment of this DECL has been set by the user, for
+	   example with an 'aligned' attribute.  */
+	bool DeclUserAlign();  // -- tree.h:2637 M_(399 tree_base)
+
+	/* Holds the machine mode corresponding to the declaration of a variable or
+	   field.  Always equal to TYPE_MODE (TREE_TYPE (decl)) except for a
+	   FIELD_DECL.  */
+	Bf_enum(8, machine_mode, unsigned) DeclMode(); // tree.h:2642 M_2751
+
+	bool DeclDebugExprIsFrom();  // -- tree.h:2650 M_2759
+
+	/* Nonzero for a given ..._DECL node means that the name of this node should
+	   be ignored for symbolic debug purposes.  For a TYPE_DECL, this means that
+	   the associated type should be ignored.  For a FUNCTION_DECL, the body of
+	   the function should also be ignored.  */
+	bool DeclIgnoredP(); // -- tree.h:2660 M_2755
+
+	/* Nonzero for a given ..._DECL node means that this node represents an
+	   "abstract instance" of the given declaration (e.g. in the original
+	   declaration of an inline function).  When generating symbolic debugging
+	   information, we mustn't try to generate any address information for nodes
+	   marked as "abstract instances" because we don't actually generate
+	   any code or allocate any data space for such instances.  */
+	bool DeclAbstract();  // -- tree.h:2669 M_2756
+
+	/* Language-specific decl information.  */
+	struct lang_decl * DeclLangSpecific(); // -- tree.h:2673 M_2815
+
+	/* In a VAR_DECL or FUNCTION_DECL, nonzero means external reference:
+	   do not allocate storage, and refer to a definition elsewhere.  Note that
+	   this does not necessarily imply the entity represented by NODE
+	   has no program source-level definition in this translation unit.  For
+	   example, for a FUNCTION_DECL, DECL_SAVED_TREE may be non-NULL and
+	   DECL_EXTERNAL may be true simultaneously; that can be the case for
+	   a C99 "extern inline" function.  */
+	bool DeclExternal();  // -- tree.h:2683 M_2777
+
+	/* Nonzero in a ..._DECL means this variable is ref'd from a nested function.
+	   For VAR_DECL nodes, PARM_DECL nodes, and FUNCTION_DECL nodes.
+
+	   For LABEL_DECL nodes, nonzero if nonlocal gotos to the label are permitted.
+
+	   Also set in some languages for variables, etc., outside the normal
+	   lexical scope, such as class instance variables.  */
+	bool DeclNonlocal();  // -- tree.h:2692 M_2753
+
+	/* Used in VAR_DECLs to indicate that the variable is a vtable.
+	   Used in FIELD_DECLs for vtable pointers.
+	   Used in FUNCTION_DECLs to indicate that the function is virtual.  */
+	bool DeclVirtualP();  // -- tree.h:2698 M_2754
+
+	/* Used to indicate that this DECL represents a compiler-generated entity.  */
+	bool DeclArtificial(); // -- tree.h:2702 M_2757
+
+	/* Additional flags for language-specific uses.  */
+	bool DeclLangFlag0();  // -- tree.h:2706 M_2761
+	bool DeclLangFlag1();  // -- tree.h:2708 M_2762
+	bool DeclLangFlag2();  // -- tree.h:2710 M_2763
+	bool DeclLangFlag3();  // -- tree.h:2712 M_2764
+	bool DeclLangFlag4();  // -- tree.h:2714 M_2765
+	bool DeclLangFlag5();  // -- tree.h:2716 M_2766
+	bool DeclLangFlag6();  // -- tree.h:2718 M_2767
+	bool DeclLangFlag7();  // -- tree.h:2720 M_2768
+	bool DeclLangFlag8();  // -- tree.h:2722 M_2769
+
+	/* Nonzero for a decl which is at file scope.  */
+	bool DeclFileScopeP(); // -- tree.h:2729 P_(2572 tree_decl_minimal)
+
+	/* Nonzero for a decl that is decorated using attribute used.
+	   This indicates to compiler tools that this decl needs to be preserved.  */
+	bool DeclPreserveP();  // -- tree.h:2735 M_2758
+
+	/* For function local variables of COMPLEX and VECTOR types,
+	   indicates that the variable is not aliased, and that all
+	   modifications to the variable have been adjusted so that
+	   they are killing assignments.  Thus the variable may now
+	   be treated as a GIMPLE register, and use real instead of
+	   virtual ops in SSA form.  */
+	bool DeclGimpleRegP();  // -- tree.h:2744 M_2784
+public:
+
 public: // Intuitive name for macro purpose
 
 };
@@ -867,7 +1155,14 @@ public: // Intuitive name for macro purpose
 class tree_decl_with_rtl : public tree_decl_common
 {
 public: // Direct macro to member function map
+	tree DeclValueExpr();  // -- tree.h:2828 P_2818
+	void SetDeclValueExpr(tree val); // -- tree.h:2830 P_2819
 
+	/* Holds the RTL expression for the value of a variable or function.
+	   This value can be evaluated lazily for functions, variables with
+	   static storage duration, and labels.  */
+	rtx DeclRtl();  // -- tree.h:2836 M_2865
+	SetDeclRtl(rtx v); // -- tree.h:2842 P_
 public: // Intuitive name for macro purpose
 
 };
@@ -1015,6 +1310,15 @@ class tree_function_decl : public tree_decl_non_common
 {
 public: // macro to member function map
 
+	/* For FUNCTION_DECL, if it is built-in, this identifies which built-in
+	   operation it is.  Note, however, that this field is overloaded, with
+	   DECL_BUILT_IN_CLASS as the discriminant, so the latter must always be
+	   checked before any access to the former.  */
+	//Ray: the latter == decl_common.DECL_DEBUG_EXPR_IS_FROM()
+	Bf_enum(11, built_in_function, int) DeclFunctionCode();  // tree.h:2648 M_3385
+
+	/* The personality function. Used for stack unwinding. */
+	tree DeclFunctionPersonality();  // tree.h:2653 M_3375
 };
 
 // -- tree.h:3417
