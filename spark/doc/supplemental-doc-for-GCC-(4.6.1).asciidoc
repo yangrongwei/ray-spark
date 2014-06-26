@@ -1,0 +1,20 @@
+shit for the various maker conversions... still not understand...  format it later
+
+TREE_CHECK() 是整个 xxx_CHECK() 宏家族的根基，所有程序生成的其它 xxx_CHECK() 宏 (位于 tree-check.h 中)，都是调用 TREE_CHECK() 来完成的。
+
+TREE_CHECK() 检查 T 的 tree_code 值，是否与 CODE 一致，不一致则报告错误。
+
+xxx_CHECK() 是程序员，用来保障逻辑正确的一种防护措施，而不是逻辑本身。
+
+xxx_P() 是程序员，用来检查…………
+
+
+T : node
+
+CODE: enum tree_code
+
+--tree.h:(663,917)
+
+```c
+#define TREE_CHECK(T, CODE)
+```

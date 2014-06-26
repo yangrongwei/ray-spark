@@ -1,0 +1,35 @@
+
+从 gcc 代码中，可以读到一种我称之为 object-in-c 的编码方式（习惯处理方式？）
+
+
+struct tree_base {				https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L367
+	struct tree_common {		https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L410
+	struct tree_int_cst {		https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L1409
+	struct tree_string {		https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L1444
+	struct tree_identifier {	https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L1486
+	...
+union tree_node {				https://github.com/mirrors/gcc/blob/gcc-4_6_1-release/gcc/tree.h#L3510
+
+
+另一种观点看对象——要继承，不是非 C++ 语法不可。
+
+struct tree_base {		// 类似基类
+...
+union tree_node {		// 合成所有类，这个 C++ 如何做到？
+
+
+
+
+// The object-in-C style of [plug-inc]/tree.h is
+//
+// 1. Declaring manipulating macros for new GENERIC 'tree node' first
+// 2. Declaring new struct for new GENERIC 'tree node'
+//    The style is always put the parent class, which is C struct,
+//    at the first field of declaring struct.
+// _. Each object-in-C class is sepreated by a FF(form feed) character
+//    I saw it in Notepad++, which editor is code maintainer using?
+//    Maybe, they have a better view for the character.
+//
+
+
+
